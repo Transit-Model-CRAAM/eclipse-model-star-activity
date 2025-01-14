@@ -301,7 +301,7 @@ class Modelo:
         eclipse1.setTempoHoras(1.)
 
         # eclipse_.criarEclipse(cme, anim=True)
-        eclipse1.criarEclipse(anim = False, plot = False)
+        eclipse1.criarEclipse(cme = False, anim = False, plot = True)
 
         self.lc_model = numpy.array(eclipse1.getCurvaLuz())
         self.ts_model = numpy.array(eclipse1.getTempoHoras())

@@ -18,7 +18,6 @@ verify:função criada para validar entradas, por exemplo numeros nao float/int 
 '''
 
 
-from contextlib import nullcontext
 from typing import List
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -48,7 +47,7 @@ class Estrela:
     '''
    
 
-    def __init__(self,raio,raioSun,intensidadeMaxima,coeficienteHum,coeficienteDois,tamanhoMatriz):
+    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None):
         
         self.raio = raio # em pixel
         self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
@@ -57,9 +56,10 @@ class Estrela:
         self.coeficienteDois = coeficienteDois
         self.tamanhoMatriz = tamanhoMatriz
         self.temperaturaEfetiva = 4875.0
-
-        #self.colors = ["gray","pink","hot"]    
-        #start = time.time()
+        
+        # Extra arguments
+        self.coeficienteTres = coeficienteTres
+        self.coeficienteQuatro = coeficienteQuatro
         
         self.estrelaMatriz = self.criaEstrela()
         self.Nx = self.tamanhoMatriz
@@ -68,7 +68,13 @@ class Estrela:
 
         self.manchas: List[Estrela.Mancha] = []
         self.faculas: List[Estrela.Facula] = []
-        self.cme: Estrela.EjecaoMassa = None
+        
+        ### Prints para testes. Descomentar linhas abaixo se necessário ### 
+        #print(self.estrelaMatriz)
+        #self.color = random.choice(self.colors)
+        #Plotar(self.tamanhoMatriz,self.estrelaMatriz)
+        #end = time.time()
+        #print(end - start)
     
     class Mancha: 
         def __init__(self, intensidade, raio, latitude, longitude):
@@ -77,25 +83,14 @@ class Estrela:
             self.latitude = latitude 
             self.longitude = longitude
 
+            self.area = 0.0
+
     class Facula:
         def __init__(self, intensidade, raio, latitude, longitude):
             self.intensidade = intensidade # em relacao a intensidade da estrela (maior que 1)
             self.raio = raio # em relacao ao raio da estrela
             self.latitude = latitude 
             self.longitude = longitude
-
-    class EjecaoMassa: 
-        def __init__(self, raio, p0x, p0y, p1x, p1y, opacidade, temperatura, velocidade, taxa_esfriamento): 
-            self.raio = raio
-            self.temperatura = temperatura
-            self.p0x = p0x
-            self.p0y = p0y
-            self.p1x = p1x
-            self.p1y = p1y
-            self.opacidade = opacidade
-            self.temperatura = temperatura
-            self.velocidade = velocidade 
-            self.taxa_esfriamento = taxa_esfriamento
 
     def criaEstrela(self): 
         # Obter o caminho absoluto do diretório atual
@@ -119,11 +114,36 @@ class Estrela:
             script_path = os.path.join(dir_pai, 'scripts', 'func64.so')
             my_func = CDLL(script_path)
 
+        
+        
+        linha = self.tamanhoMatriz
+        coluna = self.tamanhoMatriz
+        
+        # Equacao com 4 coeficientes de limbo 
+        # Não linear de quatro termos (Claret)
+        if (self.coeficienteTres and self.coeficienteQuatro): 
+            my_func.criaEstrelaClaret.restype = ndpointer(dtype=c_int, ndim=2, shape=(self.tamanhoMatriz,self.tamanhoMatriz))
+            estrelaMatriz = my_func.criaEstrelaClaret(linha,
+                                                    coluna,
+                                                    self.tamanhoMatriz,
+                                                    c_float(self.raio),
+                                                    c_float(self.intensidadeMaxima),
+                                                    c_float(self.coeficienteHum),
+                                                    c_float(self.coeficienteDois),
+                                                    c_float(self.coeficienteTres),
+                                                    c_float(self.coeficienteQuatro))
+            return estrelaMatriz
+        # Equacao coeficiente de limbo quadrático
         my_func.criaEstrela.restype = ndpointer(dtype=c_int, ndim=2, shape=(self.tamanhoMatriz,self.tamanhoMatriz))
-        estrelaMatriz = my_func.criaEstrela(self.tamanhoMatriz,self.tamanhoMatriz,self.tamanhoMatriz,c_float(self.raio),c_float(self.intensidadeMaxima),c_float(self.coeficienteHum),c_float(self.coeficienteDois))
+        estrelaMatriz = my_func.criaEstrela(linha,
+                                            coluna,
+                                            self.tamanhoMatriz,
+                                            c_float(self.raio),
+                                            c_float(self.intensidadeMaxima),
+                                            c_float(self.coeficienteHum),
+                                            c_float(self.coeficienteDois))
 
         del my_func
-
         return estrelaMatriz
         
     '''
@@ -202,11 +222,17 @@ class Estrela:
     def criaEstrelaComFaculas(self): 
         self.criaRuidos(self.faculas)
 
-    def addCme(self, cme: EjecaoMassa): 
-        self.cme = cme
+    ####### CME (Ejeção de Massa Estelar)
+    def cme(self, temperatura, raio): 
+        p0 = (400, 220)
+        p1 = (410, 250)
+        raio = raio
+        intensidade = (temperatura * self.intensidadeMaxima) / self.temperaturaEfetiva
 
-    ####### CME (Ejeção de Massa Estelar)        
-    def ejecaoDeMassa(self, temperatura, raio, opacidade_cme): 
+        cv.line(self.estrelaMatriz, p0, p1, intensidade, raio)
+        return self.estrelaMatriz
+
+    def ejecaoDeMassa(self, temperatura, raio): 
         # latitude 
         # longitude 
         # inclinacao
@@ -215,9 +241,9 @@ class Estrela:
 
         coroa = self.createCoroa()
         
-        p0 = (self.cme.p0x, self.cme.p0y)
-        p1 = (self.cme.p1x, self.cme.p1y)
-        intensidade = opacidade_cme * ((temperatura * 240) / self.temperaturaEfetiva) + (1 - opacidade_cme) * 240
+        p0 = (400, 220)
+        p1 = (410, 250)
+        intensidade = (temperatura * 240) / 4875.0
 
         cv.line(coroa, p0, p1, intensidade, raio)
 
@@ -296,12 +322,13 @@ class Estrela:
 
     def getStarName(self):
         return self.starName
-
-    def setCadence(self,cadence):
-        self.cadence = cadence
-
+        
     def getCadence(self):
         return self.cadence
+
+    # Setters
+    def setCadence(self,cadence):
+        self.cadence = cadence
 
     def Plotar(self,tamanhoMatriz,estrela):
         Nx = tamanhoMatriz

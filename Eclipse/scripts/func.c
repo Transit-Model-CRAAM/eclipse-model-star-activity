@@ -36,6 +36,42 @@ int* criaEstrela(int lin, int col, int tamanhoMatriz, float raio, float intensid
 	return estrela;
 }
 
+int* criaEstrelaClaret(int lin, int col, int tamanhoMatriz, float raio, float intensidadeMaxima, float coeficienteHum, float coeficienteDois, float coeficienteTres, float coeficienteQuatro){
+	int i, j;
+	int *estrela = (int*) malloc (lin * col * sizeof(int*));
+	int index;
+
+#pragma omp parallel
+{
+#pragma omp for collapse(2)
+	for(i=0;i<lin;i++){
+		for(j=0;j<col;j++){
+			index = i*(lin) + j;
+			estrela[index] = 0;	
+		}
+	}
+	float distanciaCentro;
+	float cosTheta;
+	
+#pragma omp for collapse(2)
+	for(j=0;j<col;j++){
+		for(i=0;i<lin;i++){
+			distanciaCentro = sqrt(pow(i-tamanhoMatriz/2,2) + pow(j-tamanhoMatriz/2,2));
+			if(distanciaCentro <= raio){
+				cosTheta = sqrt(1-pow(distanciaCentro/raio,2));
+				index = i*(lin) + j;
+				float part1 = 1 - coeficienteHum * (1 - pow(cosTheta, 1/2)) - coeficienteDois * (1 - cosTheta);
+				float part2 = -coeficienteTres * (1 - pow(cosTheta, 3/2)) - coeficienteQuatro * (1 - pow(cosTheta,2));
+				estrela[index] = (int) (intensidadeMaxima * (part1 + part2));
+			}
+		}
+	}
+}
+
+	return estrela;
+}
+
+
 double curvaLuz(double x0, double y0, int tamanhoMatriz, double raioPlanetaPixel, double *estrelaManchada, double *kk, double maxCurvaLuz){
 	double valor = 0;
 	int i;
