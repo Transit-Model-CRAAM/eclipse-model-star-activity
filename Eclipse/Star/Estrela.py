@@ -47,7 +47,7 @@ class Estrela:
     '''
    
 
-    def __init__(self,raio,raioSun,intensidadeMaxima,coeficienteHum,coeficienteDois,tamanhoMatriz):
+    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None):
         
         self.raio = raio # em pixel
         self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
@@ -56,9 +56,10 @@ class Estrela:
         self.coeficienteDois = coeficienteDois
         self.tamanhoMatriz = tamanhoMatriz
         self.temperaturaEfetiva = 4875.0
-
-        #self.colors = ["gray","pink","hot"]    
-        #start = time.time()
+        
+        # Extra arguments
+        self.coeficienteTres = coeficienteTres
+        self.coeficienteQuatro = coeficienteQuatro
         
         self.estrelaMatriz = self.criaEstrela()
         self.Nx = self.tamanhoMatriz
@@ -81,6 +82,8 @@ class Estrela:
             self.raio = raio # em relacao ao raio da estrela
             self.latitude = latitude 
             self.longitude = longitude
+
+            self.area = 0.0
 
     class Facula:
         def __init__(self, intensidade, raio, latitude, longitude):
@@ -111,11 +114,36 @@ class Estrela:
             script_path = os.path.join(dir_pai, 'scripts', 'func64.so')
             my_func = CDLL(script_path)
 
+        
+        
+        linha = self.tamanhoMatriz
+        coluna = self.tamanhoMatriz
+        
+        # Equacao com 4 coeficientes de limbo 
+        # Não linear de quatro termos (Claret)
+        if (self.coeficienteTres and self.coeficienteQuatro): 
+            my_func.criaEstrelaClaret.restype = ndpointer(dtype=c_int, ndim=2, shape=(self.tamanhoMatriz,self.tamanhoMatriz))
+            estrelaMatriz = my_func.criaEstrelaClaret(linha,
+                                                    coluna,
+                                                    self.tamanhoMatriz,
+                                                    c_float(self.raio),
+                                                    c_float(self.intensidadeMaxima),
+                                                    c_float(self.coeficienteHum),
+                                                    c_float(self.coeficienteDois),
+                                                    c_float(self.coeficienteTres),
+                                                    c_float(self.coeficienteQuatro))
+            return estrelaMatriz
+        # Equacao coeficiente de limbo quadrático
         my_func.criaEstrela.restype = ndpointer(dtype=c_int, ndim=2, shape=(self.tamanhoMatriz,self.tamanhoMatriz))
-        estrelaMatriz = my_func.criaEstrela(self.tamanhoMatriz,self.tamanhoMatriz,self.tamanhoMatriz,c_float(self.raio),c_float(self.intensidadeMaxima),c_float(self.coeficienteHum),c_float(self.coeficienteDois))
+        estrelaMatriz = my_func.criaEstrela(linha,
+                                            coluna,
+                                            self.tamanhoMatriz,
+                                            c_float(self.raio),
+                                            c_float(self.intensidadeMaxima),
+                                            c_float(self.coeficienteHum),
+                                            c_float(self.coeficienteDois))
 
         del my_func
-
         return estrelaMatriz
         
     '''
@@ -294,12 +322,13 @@ class Estrela:
 
     def getStarName(self):
         return self.starName
-
-    def setCadence(self,cadence):
-        self.cadence = cadence
-
+        
     def getCadence(self):
         return self.cadence
+
+    # Setters
+    def setCadence(self,cadence):
+        self.cadence = cadence
 
     def Plotar(self,tamanhoMatriz,estrela):
         Nx = tamanhoMatriz
