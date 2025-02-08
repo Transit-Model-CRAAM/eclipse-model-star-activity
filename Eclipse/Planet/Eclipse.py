@@ -38,7 +38,6 @@ import time
 import platform
 
 class Eclipse:
-
    
     def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta):
         '''
@@ -386,7 +385,7 @@ class Eclipse:
                                 #temperatura_cme = 3000.0 - i*0.1
                                 #raio_cme = 50+math.floor(0.3*i)
                                 temperatura_cme = self.estrela_.temperaturaEfetiva + 1.5*i
-                                raio_cme = 50+i
+                                raio_cme = 30+i
 
                                 # quando a altura da cme atingir o planeta (colocar caluclo da velocidade da cme por tempo de trânsito)
                                 if (i >= len(rangeloop)/3): 

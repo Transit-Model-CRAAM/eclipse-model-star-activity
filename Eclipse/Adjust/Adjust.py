@@ -32,7 +32,10 @@ class Ajuste:
         self.initial = numpy.array([self.u1_p0, self.u2_p0, self.a_p0, self.inc_p0, self.rp_p0])
         self.ndim = len(self.initial)
 
-        self.p0 = [numpy.array(self.initial) + 1e-4 * numpy.random.randn(self.ndim) for i in range(self.nwalkers)]
+        variations = numpy.array([0.001, 0.001, 0.001, 0.5, 0.01])
+        # 1e-4
+
+        self.p0 = [numpy.array(self.initial) + variations * numpy.random.randn(self.ndim) for i in range(self.nwalkers)]
 
         self.tratamento = tratamento
 
@@ -41,8 +44,6 @@ class Ajuste:
     #--------------------------------------------------#
     def eclipse_mcmc(self, time, theta):
         u1, u2, semiEixoUA, anguloInclinacao, raioPlanJup = theta
-
-        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,raioPlanJup,semiEixoUA)
         
         estrela_ = Estrela(373, self.rsun, 240., u1, u2, 856)
         Nx = estrela_.getNx()
@@ -137,9 +138,7 @@ class AjusteManchado:
     #--------------------------------------------------#
     #----------------------MCMC------------------------#
     #--------------------------------------------------#
-    def eclipse_mcmc(self, time, theta):
-        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA)
-        
+    def eclipse_mcmc(self, time, theta):        
         estrela_ = Estrela(373, self.rsun, 240., self.u1, self.u2, 856)
         Nx = estrela_.getNx()
         Ny = estrela_.getNy()

@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
 #include <math.h>
+#include <omp.h>
+#include <string.h> // Inclui memset para inicializar a matriz
 
 int* criaEstrela(int lin, int col, int tamanhoMatriz, float raio, float intensidadeMaxima, float coeficienteHum, float coeficienteDois){
 	int i, j;
@@ -36,11 +37,55 @@ int* criaEstrela(int lin, int col, int tamanhoMatriz, float raio, float intensid
 	return estrela;
 }
 
+
+// Função para criar uma estrela com o modelo de escurecimento de limbo de 4 parâmetros
+int* criaEstrelaClaret(int lin, int col, int tamanhoMatriz, float raio, float intensidadeMaxima,
+                       float coeficienteHum, float coeficienteDois, float coeficienteTres, float coeficienteQuatro) {
+    // Aloca memória para a matriz da estrela
+    int *estrela = (int*) malloc(lin * col * sizeof(int));
+    if (!estrela) {
+        fprintf(stderr, "Erro ao alocar memória para a matriz da estrela.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Inicializa a matriz com zeros
+    memset(estrela, 0, lin * col * sizeof(int));
+
+    int i, j, index;
+    float distanciaCentro, cosTheta;
+
+    // Processa a matriz da estrela em paralelo
+    #pragma omp parallel for private(i, j, index, distanciaCentro, cosTheta) collapse(2)
+    for (j = 0; j < col; j++) {
+        for (i = 0; i < lin; i++) {
+            // Calcula a distância do ponto (i, j) ao centro da estrela
+            distanciaCentro = sqrt(pow(i - tamanhoMatriz / 2.0, 2) + pow(j - tamanhoMatriz / 2.0, 2));
+
+            // Se o ponto estiver dentro do raio da estrela, calcula a intensidade
+            if (distanciaCentro <= raio) {
+                cosTheta = sqrt(1.0 - pow(distanciaCentro / raio, 2)); // Calcula cos(θ)
+                index = i * lin + j; // Converte (i, j) para índice linear
+                
+                // Calcula a intensidade usando os 4 coeficientes de limbo
+                float part1 = 1 - coeficienteHum * (1 - pow(cosTheta, 0.5)) - coeficienteDois * (1 - cosTheta);
+                float part2 = - coeficienteTres * (1 - pow(cosTheta, 1.5)) - coeficienteQuatro * (1 - pow(cosTheta, 2.0));
+                
+                // Garante que a intensidade seja >= 0 (evita valores negativos)
+                estrela[index] = (int) fmax(0.0, intensidadeMaxima * (part1 + part2));
+            }
+        }
+    }
+
+    return estrela; // Retorna a matriz gerada
+}
+
+// Função para criar uma estrela com o modelo padrão (escurecimento de limbo com 2 parâmetros)
 double curvaLuz(double x0, double y0, int tamanhoMatriz, double raioPlanetaPixel, double *estrelaManchada, double *kk, double maxCurvaLuz){
 	double valor = 0;
 	int i;
 	
-#pragma omp parallel for reduction(+:valor)
+	// Processa a matriz da estrela em paralelo
+	#pragma omp parallel for reduction(+:valor)
 	for(i=0;i<tamanhoMatriz*tamanhoMatriz;i++){
 		if(pow((kk[i]/tamanhoMatriz-y0),2) + pow((kk[i]-tamanhoMatriz*floor(kk[i]/tamanhoMatriz)-x0),2) > pow(raioPlanetaPixel,2)){
 			valor += estrelaManchada[i];
@@ -49,9 +94,6 @@ double curvaLuz(double x0, double y0, int tamanhoMatriz, double raioPlanetaPixel
 	
 	valor = valor/maxCurvaLuz;
 
-//((kk/tamanhoMatriz-y0)**2+(kk-tamanhoMatriz*np.fix(kk/tamanhoMatriz)-x0)**2 <= raioPlanetaPixel**2)	
-//(self.estrelaManchada*plan,dtype=float)/maxCurvaLuz
-	
 	return valor;
 }
 
@@ -59,7 +101,7 @@ double curvaLuzCME(double x0, double y0, int tamanhoMatriz, double raioPlanetaPi
     double valor = 0;
     int i;
     
-#pragma omp parallel for reduction(+:valor)
+	#pragma omp parallel for reduction(+:valor)
     for(i=0;i<tamanhoMatriz*tamanhoMatriz;i++){
         if(matrizCME[i] > 0){ // Caso a posição esteja passando em cima da CME
             if(pow((kk[i]/tamanhoMatriz-y0),2) + pow((kk[i]-tamanhoMatriz*floor(kk[i]/tamanhoMatriz)-x0),2) <= pow(raioPlanetaPixel,2)){ // Se o planeta estiver atrás
