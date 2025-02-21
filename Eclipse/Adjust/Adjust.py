@@ -207,8 +207,9 @@ class AjusteCME:
         self.p0y = 220
         self.p1x = 410
         self.p1y = 250
-        self.opacidade = 0.3
-        # self.taxa_esfriamento = 1.5
+        self.opacidade = 0.7
+        self.velocidade_cme = 0.1
+        self.taxa_esfriamento = 10
 
         try:
             self.manchas: Estrela.Mancha = eclipse.estrela_.manchas
@@ -236,19 +237,17 @@ class AjusteCME:
         self.niter = niter
         self.burnin = burnin
 
-        self.initial = numpy.array([self.raio_cme, self.p0x, self.p0y, self.p1x, self.p1y, self.opacidade])
+        self.initial = numpy.array([self.raio_cme, self.p0x, self.p0y, self.p1x, self.p1y, self.opacidade, self.velocidade_cme, self.taxa_esfriamento])
         self.ndim = len(self.initial)
 
-        variations = numpy.array([1, 1, 1, 1, 1, 0.01])
+        variations = numpy.array([1, 1, 1, 1, 1, 0.01, 0.005, 0.1])
 
         self.ndim = len(self.initial)
         self.p0 = [
-            numpy.array(
-                [
-                    *(numpy.array(self.initial[:5]) + variations[:5] * numpy.random.randn(5)).astype(int), 
-                    self.initial[5] + variations[5] * numpy.random.randn()
-                ]
-            )
+            numpy.concatenate([
+                (numpy.array(self.initial[:5]) + variations[:5] * numpy.random.randn(5)).astype(int),
+                self.initial[5:] + variations[5:] * numpy.random.randn(len(self.initial[5:]))
+            ])
             for _ in range(self.nwalkers)
         ]
         self.tratamento = tratamento
@@ -284,8 +283,8 @@ class AjusteCME:
             p1x = int(theta[3])
             p1y = int(theta[4])
             opacidade = theta[5]
-            velocidade_cme = 0.1
-            taxa_esfriamento = 1.5
+            velocidade_cme = theta[6]
+            taxa_esfriamento = theta[7]
 
             cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento)
 
@@ -330,8 +329,8 @@ class AjusteCME:
             p1x = self.p1x
             p1y = self.p1y
             opacidade = self.opacidade
-            velocidade_cme = 0.1
-            taxa_esfriamento = 1.5
+            velocidade_cme = self.velocidade_cme
+            taxa_esfriamento = self.taxa_esfriamento
 
             cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento)
 
@@ -363,6 +362,8 @@ class AjusteCME:
                 and (0 <= theta[3] <= self.tamanhoMatriz)
                 and (0 <= theta[4] <= self.tamanhoMatriz)
                 and (0 <= theta[5] <= 1)
+                and (0 <= theta[6] <= 10)
+                and (0 <= theta[7] <= 50)
             ):
                 continue
             return -numpy.inf

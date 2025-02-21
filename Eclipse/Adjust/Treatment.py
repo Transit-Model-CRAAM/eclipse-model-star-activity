@@ -211,4 +211,4 @@ class Tratamento :
 
         bb = numpy.where((self.time_phased >= min(self.ts_model)) & (self.time_phased <= max(self.ts_model)))
         
-        return self.time_phased[bb], self.smoothed_LC[bb]
+        return self.time_phased[bb], (self.smoothed_LC[bb] / max(self.smoothed_LC[bb]))
