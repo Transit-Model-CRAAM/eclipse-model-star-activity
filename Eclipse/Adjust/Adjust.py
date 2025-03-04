@@ -56,7 +56,7 @@ class Ajuste:
         eclipse = Eclipse(Nx,Ny,raioEstrelaPixel,estrela_, planeta_)
         
         eclipse.setTempoHoras(1.)
-        eclipse.criarEclipse(anim = False, plot= False)
+        eclipse.criarEclipse(cme = False, anim = False, plot = False)
         lc0 = numpy.array(eclipse.getCurvaLuz()) 
         ts0 = numpy.array(eclipse.getTempoHoras()) 
         return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
