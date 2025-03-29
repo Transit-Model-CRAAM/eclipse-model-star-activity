@@ -38,7 +38,6 @@ import time
 import platform
 
 class Eclipse:
-
    
     def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta):
         '''
@@ -242,7 +241,6 @@ class Eclipse:
 
             if (self.estrela_.cme):
                 self.addCME(rangeloop, xplan, yplan, raioPlanetaPixel, kk2, maxCurvaLuz, numAux, ims, ax1, kk, my_func, plota)
-            
             elif (self.planeta_.hasMoons()):
                 tamPp = len(pp)
                 tamLoop = len(rangeloop)
@@ -263,7 +261,6 @@ class Eclipse:
                     
                     ### Adiciona lua ao eclipse
                     self.addLua(rangeloop, xplan, yplan, raioPlanetaPixel, kk2, maxCurvaLuz, numAux, ims, ax1, kk, my_func, plota, lua)
-            
             else : 
                 for i in range(0,len(rangeloop)):
 
@@ -292,6 +289,9 @@ class Eclipse:
                                     numAux+=1
                                 plota = not(plota) #variavel auxiliar que seleciona o intervalo correto para plotagem
 
+            #ax2.plot(self.tempoHoras,self.curvaLuz)
+            #ax2.axis([-self.tempoTotal/2,self.tempoTotal/2,min(self.curvaLuz)-0.001,1.001])
+
             ax2.plot(self.tempoHoras, self.curvaLuz, label='Curva de Luz')
 
             # Definindo os limites dos eixos
@@ -307,15 +307,10 @@ class Eclipse:
             ani =animation.ArtistAnimation(fig, ims, interval=50, blit=True,repeat_delay=0.1)
             
             plt.show(block = True)
-        
-        ### Sem animação de trânsito
         else:
             #Inicio dos loops para a plotagem e calculo do trânsito
             start = time.time()
-
-            if (self.estrela_.cme):
-                self.addCME_animFalse(rangeloop, xplan, yplan, raioPlanetaPixel, kk2, maxCurvaLuz, kk, my_func)
-            elif (self.planeta_.hasMoons() == False):
+            if (self.planeta_.hasMoons() == False):
                 for i in range(0,len(rangeloop)):
 
                                 x0 = xplan[i]
@@ -545,6 +540,22 @@ class Eclipse:
         com essa funcao, é possivel passar a estrela atualizada para o eclipse que esta se formando, caso sejam adicionadas mais manchas.
         '''
         self.estrela_matriz = estrela
+
+    # def ejecaoDeMassa(self, temperatura, raio): 
+    #     # latitude 
+    #     # longitude 
+    #     # inclinacao
+    #     # shape 
+    #     # size
+
+    #     coroa = self.createCoroa()
+        
+    #     p0 = (400, 220)
+    #     p1 = (410, 250)
+    #     intensidade = (temperatura * 240) / 4875.0
+
+    #     cv.line(coroa, p0, p1, intensidade, raio)
+    #     return coroa
 
     def createCoroa(self): 
         matriz_cme = np.zeros((self.tamanhoMatriz, self.tamanhoMatriz))
