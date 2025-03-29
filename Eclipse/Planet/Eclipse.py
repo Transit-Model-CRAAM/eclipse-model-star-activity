@@ -378,6 +378,12 @@ class Eclipse:
 
     def addCME(self, rangeloop, xplan, yplan, raioPlanetaPixel, kk2, maxCurvaLuz, numAux, ims, ax1, kk, my_func, plota): 
         for i in range(0,len(rangeloop)):
+                                x0 = xplan[i]
+                                y0 = yplan[i]
+
+                                ### Adicionar aqui a cme 
+                                #temperatura_cme = 3000.0 - i*0.1
+                                #raio_cme = 50+math.floor(0.3*i)
                                 temperatura_cme = self.estrela_.temperaturaEfetiva + 1.5*i
                                 raio_cme = 30+i
 
@@ -390,7 +396,7 @@ class Eclipse:
                                     maxCurvaLuz = np.sum(self.estrela_matriz)
                                     # Soma entre cme e planeta e depois multiplica o resultado pela estrela 
                                     em = self.getMatrizTransformada(coroa)
-                                    self.curvaLuz[rangeloop[i]]=my_func.curvaLuzCME(xplan,yplan,self.tamanhoMatriz,raioPlanetaPixel,self.ejecaoMassa,kk2,maxCurvaLuz, em, opacidade_cme)
+                                    self.curvaLuz[rangeloop[i]]=my_func.curvaLuzCME(x0,y0,self.tamanhoMatriz,raioPlanetaPixel,self.ejecaoMassa,kk2,maxCurvaLuz, em, opacidade_cme)
                                 
                                 else: 
                                     estrela_manchada_cme = np.copy(self.estrela_matriz)
@@ -401,13 +407,14 @@ class Eclipse:
                                     # Matriz em auxiliar para ser passada como parametro para o script em C, que é transformada em c_double
                                     em = self.getMatrizTransformada(estrela_manchada_cme)
 
-                                self.curvaLuz[rangeloop[i]] = my_func.curvaLuz(xplan,yplan,self.tamanhoMatriz,raioPlanetaPixel,em,kk2,maxCurvaLuz)
-                                
+                                    # to - do: mudar self.ejecaoMassa para self.atividadeEstrela
+                                    self.curvaLuz[rangeloop[i]]=my_func.curvaLuz(x0,y0,self.tamanhoMatriz,raioPlanetaPixel,em,kk2,maxCurvaLuz)
+
                                 if(plota and self.curvaLuz[rangeloop[i]] != 1 and numAux<200):
                                     plan = np.zeros(self.tamanhoMatriz*self.tamanhoMatriz)+1. #cria a base do planeta (cheio de 1)
                                     coroa_array = np.zeros(self.tamanhoMatriz*self.tamanhoMatriz) #cria uma base para a coroa (cheio de 0)
                                     
-                                    ii = np.where(((kk/self.tamanhoMatriz-yplan)**2+(kk-self.tamanhoMatriz*np.fix(kk/self.tamanhoMatriz)-yplan)**2 <= raioPlanetaPixel**2))
+                                    ii = np.where(((kk/self.tamanhoMatriz-y0)**2+(kk-self.tamanhoMatriz*np.fix(kk/self.tamanhoMatriz)-x0)**2 <= raioPlanetaPixel**2))
                                     plan[ii]=0.
 
                                     plan = plan.reshape(self.tamanhoMatriz, self.tamanhoMatriz) #posicao adicionada na matriz
