@@ -307,10 +307,15 @@ class Eclipse:
             ani =animation.ArtistAnimation(fig, ims, interval=50, blit=True,repeat_delay=0.1)
             
             plt.show(block = True)
+        
+        ### Sem animação de trânsito
         else:
             #Inicio dos loops para a plotagem e calculo do trânsito
             start = time.time()
-            if (self.planeta_.hasMoons() == False):
+
+            if (self.estrela_.cme):
+                self.addCME_animFalse(rangeloop, xplan, yplan, raioPlanetaPixel, kk2, maxCurvaLuz, kk, my_func)
+            elif (self.planeta_.hasMoons() == False):
                 for i in range(0,len(rangeloop)):
 
                                 x0 = xplan[i]
@@ -384,7 +389,7 @@ class Eclipse:
 
                                 ### Adicionar aqui a cme 
                                 temperatura_cme = self.estrela_.cme.temperatura - self.estrela_.cme.taxa_esfriamento*i
-                                raio_cme = self.estrela_.cme.raio + i
+                                raio_cme = int(self.estrela_.cme.raio + self.estrela_.cme.velocidade * i)
 
                                 # quando a altura da cme atingir o planeta (colocar caluclo da velocidade da cme por tempo de trânsito)
                                 if (i >= len(rangeloop)/3): 
@@ -407,6 +412,8 @@ class Eclipse:
                                     self.curvaLuz[rangeloop[i]]=my_func.curvaLuz(x0,y0,self.tamanhoMatriz,raioPlanetaPixel,em,kk2,maxCurvaLuz)
 
                                 if(plota and self.curvaLuz[rangeloop[i]] != 1 and numAux<200):
+                                    estrela_manchada_cme = np.copy(self.estrela_matriz)
+
                                     plan = np.zeros(self.tamanhoMatriz*self.tamanhoMatriz)+1. #cria a base do planeta (cheio de 1)
                                     coroa_array = np.zeros(self.tamanhoMatriz*self.tamanhoMatriz) #cria uma base para a coroa (cheio de 0)
                                     
@@ -416,7 +423,7 @@ class Eclipse:
                                     plan = plan.reshape(self.tamanhoMatriz, self.tamanhoMatriz) #posicao adicionada na matriz
                                     plt.axis([0,self.Nx,0,self.Ny]) 
                                     
-                                    self.cme(temperatura_cme, raio_cme)
+                                    estrela_manchada_cme = self.cmeNoTransito(estrela_manchada_cme, temperatura_cme, raio_cme)
                                     
                                     if (i >= len(rangeloop)/2):
                                         coroa = coroa.flatten()
@@ -425,10 +432,10 @@ class Eclipse:
                                         common_indices = np.intersect1d(ii, jj) #indices que sao sobrepostos entre cme e planeta
                                         coroa_array[common_indices] = coroa[common_indices] * opacidade_cme 
                                         coroa_array = coroa_array.reshape(self.tamanhoMatriz, self.tamanhoMatriz) #transforma em vetor
-                                        plot_estrela = self.estrela_matriz*plan + coroa_array #multiplica o planeta na estrela e soma o valor da cme
+                                        plot_estrela = estrela_manchada_cme*plan + coroa_array #multiplica o planeta na estrela e soma o valor da cme
                                         im = ax1.imshow(plot_estrela, cmap="hot", animated = True)
                                     else:
-                                        im = ax1.imshow(self.estrela_matriz*plan,cmap="hot", animated = True)
+                                        im = ax1.imshow(estrela_manchada_cme*plan,cmap="hot", animated = True)
                                     
                                     ims.append([im]) #armazena na animação os pontos do grafico (em imagem)
                                     numAux+=1
@@ -540,22 +547,6 @@ class Eclipse:
         com essa funcao, é possivel passar a estrela atualizada para o eclipse que esta se formando, caso sejam adicionadas mais manchas.
         '''
         self.estrela_matriz = estrela
-
-    # def ejecaoDeMassa(self, temperatura, raio): 
-    #     # latitude 
-    #     # longitude 
-    #     # inclinacao
-    #     # shape 
-    #     # size
-
-    #     coroa = self.createCoroa()
-        
-    #     p0 = (400, 220)
-    #     p1 = (410, 250)
-    #     intensidade = (temperatura * 240) / 4875.0
-
-    #     cv.line(coroa, p0, p1, intensidade, raio)
-    #     return coroa
 
     def createCoroa(self): 
         matriz_cme = np.zeros((self.tamanhoMatriz, self.tamanhoMatriz))
