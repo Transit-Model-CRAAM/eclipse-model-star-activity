@@ -186,13 +186,20 @@ class Estrela:
 
         hdul = fits.open(file171)
         star_image = np.squeeze(hdul[1].data) # OS DADOS (IMAGENS) ESTAO AQUI
+        normalized = star_image
+        normalized[np.where(star_image<=0)]=1
+
+        # min_value = np.min(star_image)
+
+        # if min_value < 0:
+        #     star_image -= min_value
 
         num_frames = 15 # numero de frames .fits que serão utilizados
         radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
 
-        self.estrelaMatriz.append(star_image)
+        self.estrelaMatriz.append(normalized.astype(np.float64))
         self.tamanhoMatriz = len(star_image[:, 0])
-        return star_image
+        return normalized
 
     '''
     Ruidos podem ser Manchas ou Fáculas
@@ -336,6 +343,9 @@ class Estrela:
         '''
         Retorna a estrela, plotada sem as manchas, necessário caso o usuário escolha a plotagem sem manchas.
         '''
+        if self.useFits:
+            return self.estrelaMatriz[0]
+        
         return self.estrelaMatriz
 
     def getu1(self):

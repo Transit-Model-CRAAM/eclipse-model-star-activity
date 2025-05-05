@@ -278,7 +278,10 @@ class Eclipse:
                                     plt.axis([0,self.Nx,0,self.Ny])
 
                                     ### TESTE ###
-                                    im = ax1.imshow(np.squeeze(self.estrela_matriz) * plan, cmap="hot", animated=True)
+                                    # im = ax1.imshow(np.squeeze(self.estrela_matriz) * plan, cmap="hot", animated=True)
+                                    image = np.squeeze(self.estrela_matriz) * plan
+                                    image[np.where(self.estrela_matriz<=0)]=1
+                                    im = ax1.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower', animated=True)
                                     ###
                                     #im = ax1.imshow(self.estrela_matriz*plan,cmap="hot", animated = True)
 
