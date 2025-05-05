@@ -18,6 +18,7 @@ verify:função criada para validar entradas, por exemplo numeros nao float/int 
 '''
 
 
+from tokenize import String
 from typing import List
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -29,6 +30,11 @@ import platform
 import os
 import cv2 as cv
 import numpy as np
+from scipy.io import readsav
+from astropy.io import fits
+
+from PIL import Image
+from matplotlib.animation import FuncAnimation
 
 class Estrela:
     '''
@@ -47,10 +53,14 @@ class Estrela:
     '''
    
 
-    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None):
+    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None, useFits = False):
         
         self.raio = raio # em pixel
-        self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
+        if useFits: 
+            self.raioSun = 1 * 696340
+        else : 
+            self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
+            
         self.intensidadeMaxima = intensidadeMaxima
         self.coeficienteHum = coeficienteHum
         self.coeficienteDois = coeficienteDois
@@ -61,7 +71,14 @@ class Estrela:
         self.coeficienteTres = coeficienteTres
         self.coeficienteQuatro = coeficienteQuatro
         
-        self.estrelaMatriz = self.criaEstrela()
+        self.useFits = useFits
+
+        if useFits: 
+            self.estrelaMatriz = []
+            self.criaEstrelaByFits("")
+        else: 
+            self.estrelaMatriz = self.criaEstrela()
+
         self.Nx = self.tamanhoMatriz
         self.Ny = self.tamanhoMatriz
         self.color = "hot"
@@ -159,7 +176,24 @@ class Estrela:
 
         del my_func
         return estrelaMatriz
-        
+    
+    '''
+    Cria estrela através de um arquivo .FITS da imagem da Estrela 
+    '''
+    def criaEstrelaByFits(self, path: String):
+        # arquivo FITS dos dados
+        file171 = 'aia_lev1_171a_2022_10_01t13_30_09_35z_image_lev1.fits'
+
+        hdul = fits.open(file171)
+        star_image = np.squeeze(hdul[1].data) # OS DADOS (IMAGENS) ESTAO AQUI
+
+        num_frames = 15 # numero de frames .fits que serão utilizados
+        radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
+
+        self.estrelaMatriz.append(star_image)
+        self.tamanhoMatriz = len(star_image[:, 0])
+        return star_image
+
     '''
     Ruidos podem ser Manchas ou Fáculas
     '''
@@ -339,9 +373,43 @@ class Estrela:
         self.cadence = cadence
 
     def Plotar(self,tamanhoMatriz,estrela):
+        if self.useFits: 
+            self.create_animation()
+            return 
+            
         Nx = tamanhoMatriz
         Ny = tamanhoMatriz
         plt.axis([0,Nx,0,Ny])
         plt.imshow(estrela,self.color)
         plt.gca().invert_yaxis()  # Corrige o eixo Y invertido
+        plt.show()
+
+    def create_animation(self, cmap="hot", interval=300):
+        if not self.estrelaMatriz:
+            raise ValueError("No images loaded. Call load_images() first.")
+
+        fig, ax = plt.subplots()
+
+        #plt.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower')
+        #im = ax.imshow(np.log10(self.estrelaMatriz[0]), cmap=cmap, animated=True)
+        
+        image = self.estrelaMatriz[0]
+        image[np.where(self.estrelaMatriz[0]<=0)]=1
+        im = ax.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower')
+
+        def update(frame):
+            im.set_array(self.estrelaMatriz[frame])
+            return [im]
+
+        # self.animation = FuncAnimation(
+        #     fig,
+        #     update,
+        #     frames=len(self.estrelaMatriz),
+        #     blit=True,
+        #     interval=interval
+        # )
+
+    def show_animation(self):
+        if self.animation is None:
+            raise ValueError("Animation not created. Call create_animation() first.")
         plt.show()

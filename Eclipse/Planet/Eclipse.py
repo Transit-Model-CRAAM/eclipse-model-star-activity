@@ -276,7 +276,11 @@ class Eclipse:
                                     plan = plan.reshape(self.tamanhoMatriz, self.tamanhoMatriz) #posicao adicionada na matriz
                                     
                                     plt.axis([0,self.Nx,0,self.Ny])
-                                    im = ax1.imshow(self.estrela_matriz*plan,cmap="hot", animated = True)
+
+                                    ### TESTE ###
+                                    im = ax1.imshow(np.squeeze(self.estrela_matriz) * plan, cmap="hot", animated=True)
+                                    ###
+                                    #im = ax1.imshow(self.estrela_matriz*plan,cmap="hot", animated = True)
 
                                     # Adicionando título e rótulos dos eixos
                                     ax1.set_title('Modelo de Eclipse na host star')
@@ -317,7 +321,7 @@ class Eclipse:
                 self.addCME_animFalse(rangeloop, xplan, yplan, raioPlanetaPixel, kk2, maxCurvaLuz, kk, my_func)
             elif (self.planeta_.hasMoons() == False):
                 for i in range(0,len(rangeloop)):
-
+                                # em = self.getMatrizTransformada(self.estrela_matriz[i])
                                 x0 = xplan[i]
                                 y0 = yplan[i]
 
