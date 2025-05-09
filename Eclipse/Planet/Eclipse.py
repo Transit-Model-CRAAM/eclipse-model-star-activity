@@ -279,9 +279,9 @@ class Eclipse:
 
                                     ### TESTE ###
                                     # im = ax1.imshow(np.squeeze(self.estrela_matriz) * plan, cmap="hot", animated=True)
-                                    image = np.squeeze(self.estrela_matriz) * plan
+                                    image = np.squeeze(self.estrela_matriz) 
                                     image[np.where(self.estrela_matriz<=0)]=1
-                                    im = ax1.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower', animated=True)
+                                    im = ax1.imshow(np.log10(image) * plan,cmap='copper',aspect='equal', animated=True)
                                     ###
                                     #im = ax1.imshow(self.estrela_matriz*plan,cmap="hot", animated = True)
 

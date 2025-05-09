@@ -35,6 +35,7 @@ from astropy.io import fits
 
 from PIL import Image
 from matplotlib.animation import FuncAnimation
+from scipy.ndimage import zoom
 
 class Estrela:
     '''
@@ -182,6 +183,7 @@ class Estrela:
     '''
     def criaEstrelaByFits(self, path: String):
         # arquivo FITS dos dados
+        path = "Sun/sdo_aia_download/2011-06-05"
         file171 = 'aia_lev1_171a_2022_10_01t13_30_09_35z_image_lev1.fits'
 
         hdul = fits.open(file171)
@@ -193,12 +195,13 @@ class Estrela:
 
         # if min_value < 0:
         #     star_image -= min_value
+        resized = zoom(normalized, (856 / 4096, 856 / 4096), order=0)
 
         num_frames = 15 # numero de frames .fits que serão utilizados
         radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
 
-        self.estrelaMatriz.append(normalized.astype(np.float64))
-        self.tamanhoMatriz = len(star_image[:, 0])
+        self.estrelaMatriz.append(resized.astype(np.float64))
+        self.tamanhoMatriz = len(resized[:, 0])
         return normalized
 
     '''
@@ -407,10 +410,6 @@ class Estrela:
         image[np.where(self.estrelaMatriz[0]<=0)]=1
         im = ax.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower')
 
-        def update(frame):
-            im.set_array(self.estrelaMatriz[frame])
-            return [im]
-
         # self.animation = FuncAnimation(
         #     fig,
         #     update,
@@ -418,6 +417,10 @@ class Estrela:
         #     blit=True,
         #     interval=interval
         # )
+
+    def update(self, im, frame):
+            im.set_array(self.estrelaMatriz[frame])
+            return [im]
 
     def show_animation(self):
         if self.animation is None:
