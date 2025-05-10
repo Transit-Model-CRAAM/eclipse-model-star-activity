@@ -32,6 +32,7 @@ import cv2 as cv
 import numpy as np
 from scipy.io import readsav
 from astropy.io import fits
+from pathlib import Path
 
 from PIL import Image
 from matplotlib.animation import FuncAnimation
@@ -178,31 +179,38 @@ class Estrela:
         del my_func
         return estrelaMatriz
     
-    '''
-    Cria estrela através de um arquivo .FITS da imagem da Estrela 
-    '''
     def criaEstrelaByFits(self, path: String):
+        '''
+        Cria estrela através de um arquivo .FITS da imagem da Estrela 
+        '''
+        self.tamanhoMatriz = 856
+
         # arquivo FITS dos dados
-        path = "Sun/sdo_aia_download/2011-06-05"
-        file171 = 'aia_lev1_171a_2022_10_01t13_30_09_35z_image_lev1.fits'
+        # Obter o caminho absoluto do diretório atual
+        dir_atual = os.path.dirname(os.path.abspath(__file__))
 
-        hdul = fits.open(file171)
-        star_image = np.squeeze(hdul[1].data) # OS DADOS (IMAGENS) ESTAO AQUI
-        normalized = star_image
-        normalized[np.where(star_image<=0)]=1
+        # Voltar um diretório para chegar ao diretório pai
+        dir_pai = os.path.dirname(dir_atual)
+        dir_pai = os.path.dirname(dir_pai)
+        
+        path = os.path.join(dir_pai, "Sun", "sdo_aia_download", "2011-06-05")
 
-        # min_value = np.min(star_image)
+        for nome_arquivo in os.listdir(path):
+            if nome_arquivo.endswith('.fits'):
+                hdul = fits.open(os.path.join(path, nome_arquivo))
+                star_image = np.squeeze(hdul[1].data) # OS DADOS (IMAGENS) ESTAO AQUI
+                normalized = star_image
+                normalized[np.where(star_image<=0)]=1
 
-        # if min_value < 0:
-        #     star_image -= min_value
-        resized = zoom(normalized, (856 / 4096, 856 / 4096), order=0)
+                tamanhoMatriz = len(normalized[:, 0])
+                
+                resized = zoom(normalized, (self.tamanhoMatriz / tamanhoMatriz, self.tamanhoMatriz / tamanhoMatriz), order=0)
 
-        num_frames = 15 # numero de frames .fits que serão utilizados
-        radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
+                radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
 
-        self.estrelaMatriz.append(resized.astype(np.float64))
-        self.tamanhoMatriz = len(resized[:, 0])
-        return normalized
+                self.estrelaMatriz.append(resized[::-1].astype(np.float64))
+        
+        return self.estrelaMatriz
 
     '''
     Ruidos podem ser Manchas ou Fáculas
@@ -397,30 +405,29 @@ class Estrela:
         plt.gca().invert_yaxis()  # Corrige o eixo Y invertido
         plt.show()
 
-    def create_animation(self, cmap="hot", interval=300):
+    def create_animation(self, cmap="copper", interval=300):
         if not self.estrelaMatriz:
             raise ValueError("No images loaded. Call load_images() first.")
 
         fig, ax = plt.subplots()
 
-        #plt.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower')
-        #im = ax.imshow(np.log10(self.estrelaMatriz[0]), cmap=cmap, animated=True)
-        
         image = self.estrelaMatriz[0]
         image[np.where(self.estrelaMatriz[0]<=0)]=1
-        im = ax.imshow(np.log10(image),cmap='copper',aspect='equal',origin='lower')
+        im = ax.imshow(np.log10(image), cmap=cmap, animated=True)
 
-        # self.animation = FuncAnimation(
-        #     fig,
-        #     update,
-        #     frames=len(self.estrelaMatriz),
-        #     blit=True,
-        #     interval=interval
-        # )
-
-    def update(self, im, frame):
-            im.set_array(self.estrelaMatriz[frame])
+        def update(frame):
+            image = self.estrelaMatriz[frame]
+            image[np.where(self.estrelaMatriz[frame]<=0)]=1
+            im.set_array(np.log10(image))
             return [im]
+
+        self.animation = FuncAnimation(
+            fig,
+            update,
+            frames=len(self.estrelaMatriz),
+            blit=True,
+            interval=interval
+        )
 
     def show_animation(self):
         if self.animation is None:
