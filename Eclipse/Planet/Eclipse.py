@@ -39,12 +39,13 @@ import platform
 
 class Eclipse:
    
-    def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta):
+    def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta, teste: int):
         '''
         :parâmetro Nx e Ny: tamanho da matriz estrela 
         :parâmetro raioEstrelaPixel: raio da estrela em pixel 
         :parâmetro estrelaManchada: objeto ESTRELA passado como estrelaManchada apos a inserção de manchas
         '''
+        self.teste = teste
         self.Nx = Nx
         self.Ny = Ny
         self.intervaloTempo = 1
@@ -294,10 +295,22 @@ class Eclipse:
 
                     em = self.getMatrizTransformada(self.estrela_.estrelaMatriz[0])
                     tam = len(rangeloop)
+                    n_imgs = len(self.estrela_.estrelaMatriz)
                     for i in range(0,tam):
-                                    if i % len(self.estrela_.estrelaMatriz) == 0:
-                                        maxCurvaLuz = np.sum(self.estrela_.estrelaMatriz[i // len(self.estrela_.estrelaMatriz)])
-                                        em = self.getMatrizTransformada(self.estrela_.estrelaMatriz[i // len(self.estrela_.estrelaMatriz)])
+                                    idx_imagem = int(i * n_imgs / tam)  # índice da imagem atual
+                                    matriz = self.estrela_.estrelaMatriz[idx_imagem]
+
+                                    maxCurvaLuz = np.sum(matriz)
+                                    em = self.getMatrizTransformada(matriz)
+                                   
+                                    # if self.teste == 1: 
+                                    #     if i % len(self.estrela_.estrelaMatriz) == 0:
+                                    #         maxCurvaLuz = np.sum(self.estrela_.estrelaMatriz[i*2 // len(self.estrela_.estrelaMatriz)])
+                                    #         em = self.getMatrizTransformada(self.estrela_.estrelaMatriz[i*2 // len(self.estrela_.estrelaMatriz)])
+                                    # if self.teste == 2: 
+                                    #     if i % len(self.estrela_.estrelaMatriz) == 0:
+                                    #         maxCurvaLuz = np.sum(self.estrela_.estrelaMatriz[i//(tam//len(self.estrela_.estrelaMatriz))])
+                                    #         em = self.getMatrizTransformada(self.estrela_.estrelaMatriz[i//(tam//len(self.estrela_.estrelaMatriz))])
 
                                     x0 = xplan[i]
                                     y0 = yplan[i]
@@ -313,9 +326,17 @@ class Eclipse:
                                         plt.axis([0,self.Nx,0,self.Ny])
 
                                         ### TESTE ###
+                                        image = np.squeeze(matriz) 
+                                        image[np.where(matriz<=0)]=1
                                         # im = ax1.imshow(np.squeeze(self.estrela_matriz) * plan, cmap="hot", animated=True)
-                                        image = np.squeeze(self.estrela_.estrelaMatriz[i*2 // len(self.estrela_.estrelaMatriz)]) 
-                                        image[np.where(self.estrela_.estrelaMatriz[i*2 // len(self.estrela_.estrelaMatriz)]<=0)]=1
+                                        # if self.teste == 1: #to-do
+                                        #     image = np.squeeze(self.estrela_.estrelaMatriz[i*2 // len(self.estrela_.estrelaMatriz)]) 
+                                        #     image[np.where(self.estrela_.estrelaMatriz[i*2 // len(self.estrela_.estrelaMatriz)]<=0)]=1
+                                        # if self.teste == 2: #to-do
+                                        #     image = np.squeeze(self.estrela_.estrelaMatriz[i//(tam//len(self.estrela_.estrelaMatriz))]) 
+                                        #     image[np.where(self.estrela_.estrelaMatriz[i//(tam//len(self.estrela_.estrelaMatriz))]<=0)]=1
+
+
                                         im = ax1.imshow(np.log10(image) * plan,cmap='copper',aspect='equal', animated=True)
                                         ###
                                         #im = ax1.imshow(self.estrela_matriz*plan,cmap="hot", animated = True)

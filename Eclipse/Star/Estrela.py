@@ -55,7 +55,7 @@ class Estrela:
     '''
    
 
-    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None, useFits = False):
+    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None, useFits = False, path=""):
         
         self.raio = raio # em pixel
         if useFits: 
@@ -77,7 +77,7 @@ class Estrela:
 
         if useFits: 
             self.estrelaMatriz = []
-            self.criaEstrelaByFits("")
+            self.criaEstrelaByFits(path)
         else: 
             self.estrelaMatriz = self.criaEstrela()
 
@@ -193,7 +193,7 @@ class Estrela:
         dir_pai = os.path.dirname(dir_atual)
         dir_pai = os.path.dirname(dir_pai)
         
-        path = os.path.join(dir_pai, "Sun", "sdo_aia_download", "2011-06-05")
+        path = os.path.join(dir_pai, "Sun", "sdo_aia_download", path)
 
         for nome_arquivo in os.listdir(path):
             if nome_arquivo.endswith('.fits'):
@@ -209,7 +209,8 @@ class Estrela:
                 radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
 
                 self.estrelaMatriz.append(resized[::-1].astype(np.float64))
-        
+                
+        #self.estrelaMatriz.reverse()
         return self.estrelaMatriz
 
     '''
