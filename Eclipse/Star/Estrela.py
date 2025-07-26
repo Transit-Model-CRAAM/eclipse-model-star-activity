@@ -18,6 +18,7 @@ verify:função criada para validar entradas, por exemplo numeros nao float/int 
 '''
 
 
+from tokenize import String
 from typing import List
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -29,6 +30,13 @@ import platform
 import os
 import cv2 as cv
 import numpy as np
+from scipy.io import readsav
+from astropy.io import fits
+from pathlib import Path
+
+from PIL import Image
+from matplotlib.animation import FuncAnimation
+from scipy.ndimage import zoom
 
 class Estrela:
     '''
@@ -47,10 +55,14 @@ class Estrela:
     '''
    
 
-    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None):
+    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None, useFits = False):
         
         self.raio = raio # em pixel
-        self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
+        if useFits: 
+            self.raioSun = 1 * 696340
+        else : 
+            self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
+            
         self.intensidadeMaxima = intensidadeMaxima
         self.coeficienteHum = coeficienteHum
         self.coeficienteDois = coeficienteDois
@@ -61,7 +73,14 @@ class Estrela:
         self.coeficienteTres = coeficienteTres
         self.coeficienteQuatro = coeficienteQuatro
         
-        self.estrelaMatriz = self.criaEstrela()
+        self.useFits = useFits
+
+        if useFits: 
+            self.estrelaMatriz = []
+            self.criaEstrelaByFits("")
+        else: 
+            self.estrelaMatriz = self.criaEstrela()
+
         self.Nx = self.tamanhoMatriz
         self.Ny = self.tamanhoMatriz
         self.color = "hot"
@@ -159,7 +178,40 @@ class Estrela:
 
         del my_func
         return estrelaMatriz
+    
+    def criaEstrelaByFits(self, path: String):
+        '''
+        Cria estrela através de um arquivo .FITS da imagem da Estrela 
+        '''
+        self.tamanhoMatriz = 856
+
+        # arquivo FITS dos dados
+        # Obter o caminho absoluto do diretório atual
+        dir_atual = os.path.dirname(os.path.abspath(__file__))
+
+        # Voltar um diretório para chegar ao diretório pai
+        dir_pai = os.path.dirname(dir_atual)
+        dir_pai = os.path.dirname(dir_pai)
         
+        path = os.path.join(dir_pai, "Sun", "sdo_aia_download", "2011-06-05")
+
+        for nome_arquivo in os.listdir(path):
+            if nome_arquivo.endswith('.fits'):
+                hdul = fits.open(os.path.join(path, nome_arquivo))
+                star_image = np.squeeze(hdul[1].data) # OS DADOS (IMAGENS) ESTAO AQUI
+                normalized = star_image
+                normalized[np.where(star_image<=0)]=1
+
+                tamanhoMatriz = len(normalized[:, 0])
+                
+                resized = zoom(normalized, (self.tamanhoMatriz / tamanhoMatriz, self.tamanhoMatriz / tamanhoMatriz), order=0)
+
+                radius_fits = hdul[1].header['RSUN_OBS']/hdul[1].header['CDELT1'] # radius in arcsec
+
+                self.estrelaMatriz.append(resized[::-1].astype(np.float64))
+        
+        return self.estrelaMatriz
+
     '''
     Ruidos podem ser Manchas ou Fáculas
     '''
@@ -302,6 +354,9 @@ class Estrela:
         '''
         Retorna a estrela, plotada sem as manchas, necessário caso o usuário escolha a plotagem sem manchas.
         '''
+        if self.useFits:
+            return self.estrelaMatriz[0]
+        
         return self.estrelaMatriz
 
     def getu1(self):
@@ -339,9 +394,42 @@ class Estrela:
         self.cadence = cadence
 
     def Plotar(self,tamanhoMatriz,estrela):
+        if self.useFits: 
+            self.create_animation()
+            return 
+            
         Nx = tamanhoMatriz
         Ny = tamanhoMatriz
         plt.axis([0,Nx,0,Ny])
         plt.imshow(estrela,self.color)
         plt.gca().invert_yaxis()  # Corrige o eixo Y invertido
+        plt.show()
+
+    def create_animation(self, cmap="copper", interval=300):
+        if not self.estrelaMatriz:
+            raise ValueError("No images loaded. Call load_images() first.")
+
+        fig, ax = plt.subplots()
+
+        image = self.estrelaMatriz[0]
+        image[np.where(self.estrelaMatriz[0]<=0)]=1
+        im = ax.imshow(np.log10(image), cmap=cmap, animated=True)
+
+        def update(frame):
+            image = self.estrelaMatriz[frame]
+            image[np.where(self.estrelaMatriz[frame]<=0)]=1
+            im.set_array(np.log10(image))
+            return [im]
+
+        self.animation = FuncAnimation(
+            fig,
+            update,
+            frames=len(self.estrelaMatriz),
+            blit=True,
+            interval=interval
+        )
+
+    def show_animation(self):
+        if self.animation is None:
+            raise ValueError("Animation not created. Call create_animation() first.")
         plt.show()
