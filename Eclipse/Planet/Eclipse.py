@@ -39,13 +39,14 @@ import platform
 
 class Eclipse:
    
-    def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta, teste: int):
+    def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta, teste: int, cmap = "hot"):
         '''
         :parâmetro Nx e Ny: tamanho da matriz estrela 
         :parâmetro raioEstrelaPixel: raio da estrela em pixel 
         :parâmetro estrelaManchada: objeto ESTRELA passado como estrelaManchada apos a inserção de manchas
         '''
         self.teste = teste
+        self.cmap = cmap 
         self.Nx = Nx
         self.Ny = Ny
         self.intervaloTempo = 1
@@ -86,7 +87,7 @@ class Eclipse:
 
     #a partir do momento em que a lua é instanciada na main, esses objetos se tornam objetos da classe com self.
     def criarLua(self, moon: Moon):
-        moon.moonOrbit()
+        moon.criaOrbitaLua()
         self.planeta_.addLua(moon)
         
     def criarEclipse(self, anim=True, plot=True):
@@ -506,9 +507,9 @@ class Eclipse:
                                         coroa_array[common_indices] = coroa[common_indices] * opacidade_cme 
                                         coroa_array = coroa_array.reshape(self.tamanhoMatriz, self.tamanhoMatriz) #transforma em vetor
                                         plot_estrela = estrela_manchada_cme*plan + coroa_array #multiplica o planeta na estrela e soma o valor da cme
-                                        im = ax1.imshow(plot_estrela, cmap="hot", animated = True)
+                                        im = ax1.imshow(plot_estrela, cmap=self.cmap, animated = True)
                                     else:
-                                        im = ax1.imshow(estrela_manchada_cme*plan,cmap="hot", animated = True)
+                                        im = ax1.imshow(estrela_manchada_cme*plan,cmap=self.cmap, animated = True)
                                     
                                     ims.append([im]) #armazena na animação os pontos do grafico (em imagem)
                                     numAux+=1

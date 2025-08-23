@@ -5,19 +5,19 @@ class Planeta:
     def __init__(self, semiEixoUA, raioPlanJup, periodo, anguloInclinacao, ecc, anom, raioStar,mass): 
         self.luas = []
 
-        self.semiEixoUA = semiEixoUA
-        self.raioPlanJup = raioPlanJup
+        self.semiEixoUA = semiEixoUA # to-do: mudar nome
+        self.raioPlanJup = raioPlanJup # to-do: mudar nome
         self.periodo = periodo
-        self.anguloInclinacao = anguloInclinacao
+        self.anguloInclinacao = anguloInclinacao # to-do: mudar nome
         self.ecc = ecc
         self.anom = anom 
         self.mass = mass * (1.898 *(10**27)) #passar para gramas por conta da constante G
         
         # Calculos
-        self.semiEixoRaioStar = self.calcSemEixoRaioStar(raioStar)
+        self.semiEixoRaioStar = self.calcSemEixoRaioStar(raioStar) # to-do: mudar nome
 
         # NOTE:: semiEixoPixel = self.semiEixoRaioStar * self.raioEstrelaPixel #nao sei se vou precisar
-        self.raioPlanetaRstar = self.calcRaioPlanetaRaioStar(raioStar)
+        self.raioPlanetaRstar = self.calcRaioPlanetaRaioStar(raioStar) # to-do: mudar nome
 
     ### Base funcionts 
     def calcSemEixoRaioStar(self, raioStar): 

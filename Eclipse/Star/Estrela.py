@@ -55,7 +55,7 @@ class Estrela:
     '''
    
 
-    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None, useFits = False, path=""):
+    def __init__(self, raio, raioSun, intensidadeMaxima, coeficienteHum, coeficienteDois, tamanhoMatriz, coeficienteTres = None, coeficienteQuatro = None, useFits = False, fits_path=""):
         
         self.raio = raio # em pixel
         if useFits: 
@@ -64,20 +64,20 @@ class Estrela:
             self.raioSun = raioSun * 696340 # em relacao ao raio do Sol
             
         self.intensidadeMaxima = intensidadeMaxima
-        self.coeficienteHum = coeficienteHum
-        self.coeficienteDois = coeficienteDois
-        self.tamanhoMatriz = tamanhoMatriz
-        self.temperaturaEfetiva = 4875.0
+        self.coeficienteHum = coeficienteHum # to-do: mudar nome
+        self.coeficienteDois = coeficienteDois # to-do: mudar nome
+        self.tamanhoMatriz = tamanhoMatriz # to-do: mudar nome
+        self.temperaturaEfetiva = 4875.0 # to-do: mudar nome, porque esta mockado?
         
         # Extra arguments
-        self.coeficienteTres = coeficienteTres
-        self.coeficienteQuatro = coeficienteQuatro
+        self.coeficienteTres = coeficienteTres # to-do: mudar nome
+        self.coeficienteQuatro = coeficienteQuatro # to-do: mudar nome
         
         self.useFits = useFits
 
         if useFits: 
             self.estrelaMatriz = []
-            self.criaEstrelaByFits(path)
+            self.criaEstrelaByFits(fits_path)
         else: 
             self.estrelaMatriz = self.criaEstrela()
 
@@ -311,8 +311,8 @@ class Estrela:
         return coroa
 
     def createCoroa(self): 
-        matriz_fotosfera = np.zeros((self.tamanhoMatriz, self.tamanhoMatriz))
-        return matriz_fotosfera
+        matriz_coroa = np.zeros((self.tamanhoMatriz, self.tamanhoMatriz))
+        return matriz_coroa
    
     ####### WIP: Inserção de flares
     def flares(self): #recebe como parâmetro a estrela atualizada

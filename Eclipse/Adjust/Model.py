@@ -34,7 +34,7 @@ class Modelo:
         self.u2 = estrela.getu2()
         self.n = estrela.getTamanhoMatriz()
         self.r = estrela.getRaioStar() #raio da estrela em pixel 
-        self.r_Sun = estrela.getRaioSun() #raio da estrela em RSun
+        self.r_Sun = estrela.getRaioSun() #raio da estrela em RSun to-do: mudar nome
         self.mx = estrela.getIntensidadeMaxima()
         self.star_name = estrela.getStarName() #nome da estrela
         self.cadence = estrela.getCadence() #cadencia da estrela (short ou long)
@@ -44,10 +44,10 @@ class Modelo:
 
         #coletando objetos de Eclipse
         self.raioPlan = eclipse.planeta_.getRaioPlan()
-        self.R_jup = eclipse.planeta_.getRplanJup()
+        self.R_jup = eclipse.planeta_.getRplanJup() # to-do: mudar nome
         self.AU = eclipse.planeta_.getSemiEixo() #semieixo em UA
         self.semiEixoRaioStar = eclipse.planeta_.getsemiEixoRaioStar() #semieixo em relacao ao raio da estrela
-        self.porb = eclipse.planeta_.getPeriodo()
+        self.porb = eclipse.planeta_.getPeriodo() # mudar nome
         self.inc = eclipse.planeta_.getInc()
         self.mass = eclipse.planeta_.mass
         self.ecc,self.anom = eclipse.planeta_.getEccAnom()

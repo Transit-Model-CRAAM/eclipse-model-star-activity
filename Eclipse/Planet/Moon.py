@@ -23,48 +23,48 @@ class Moon:
         '''
         
         tm0 = 0 # moon first transit time
-        self.raioM = raioM*6371 #r moon em relacao ao raio da Terra, #multiplicando pelo R da terra em Km
-        self.massM = massM*(5.972*(10**24)) #em relacao a massa da Terra
+        self.raioM = raioM*6371 #r moon em relacao ao raio da Terra, #multiplicando pelo R da terra em Km to-do: mudar nome
+        self.massM = massM*(5.972*(10**24)) #em relacao a massa da Terra to-do: mudar nome
         self.periodo = periodoM #em dias
-        self.tm0 = tm0 #default
-        self.tempoHoras = tempoHoras
+        self.tm0 = tm0 #default to-do: mudar nome
+        self.tempoHoras = tempoHoras # to-do: mudar nome
 
         # planeta
-        self.planetaAnguloInclinacao = planetaAnguloInclinacao
+        self.planetaAnguloInclinacao = planetaAnguloInclinacao # to-do: mudar nome
         self.massPlaneta = massPlaneta
-        self.raioPlanetaPixel = raioPlanetaPixel
-        self.perPlan = perPlan
+        self.raioPlanetaPixel = raioPlanetaPixel # to-do: mudar nome
+        self.perPlan = perPlan # to-do: mudar nome
         # estrela 
-        self.raioEstrelaPixel = raioEstrelaPixel
-        self.raioStar = raioStar #raio da estrela em relacao ao raio do sol
+        self.raioEstrelaPixel = raioEstrelaPixel # to-do: mudar nome 
+        self.raioStar = raioStar #raio da estrela em relacao ao raio do sol # to-do: mudar nome 
 
         self.distancia = (self.getDistancia())/100
 
         
     # moon orbit in equatorial plane of planet
-    def moonOrbit(self):
+    def criaOrbitaLua(self):
         '''
         funcao que calcula a orbita da lua, necessario apenas passar o raio da estrela como raioStar em km
         '''
-        self.Rmoon = self.raioM / self.raioStar #raio da lua em relacao ao raio da estrela 
-        self.RmoonPixel = self.Rmoon * self.raioEstrelaPixel #raio da lua calculado em pixel 
+        self.Rmoon = self.raioM / self.raioStar #raio da lua em relacao ao raio da estrela # to-do: mudar nome
+        self.RmoonPixel = self.Rmoon * self.raioEstrelaPixel #raio da lua calculado em pixel # to-do: mudar nome
         
-        self.dmoon = self.getDMoon() #calculo da distancia em pixel
+        self.dmoon = self.getDMoon() #calculo da distancia em pixel # to-do:  mudar nome
         
         self.theta_m = 2*np.pi * self.tempoHoras / (self.perPlan*24.) - self.tm0
         self.xm = self.dmoon * np.cos(self.theta_m)
         self.ym = self.dmoon * np.sin(self.theta_m) * np.cos(self.planetaAnguloInclinacao) 
 
     def getppMoon(self,tamanhoMatriz):
-        #calculando a orbita projetada da lua
+        # calculando a orbita projetada da lua
         dtor = np.pi/180.
         xlua = self.xm + tamanhoMatriz/2
         ylua = self.ym + tamanhoMatriz/2
         if(self.planetaAnguloInclinacao > 90.): 
             ylua = -self.dmoon*np.sin(self.theta_m)*np.cos(self.planetaAnguloInclinacao*dtor) + tamanhoMatriz/2
 
-        #orbita projetada da Lua
-        ppMoon, = np.where((xlua >= 0) & (xlua < tamanhoMatriz) & (ylua >= 0) & (ylua < tamanhoMatriz)) 
+        # orbita projetada da Lua
+        ppMoon, = np.where((xlua >= 0) & (xlua < tamanhoMatriz) & (ylua >= 0) & (ylua < tamanhoMatriz)) # to-do: mudar nome 
         self.xl = xlua[ppMoon]
         self.yl = ylua[ppMoon]
         return ppMoon   
@@ -85,7 +85,7 @@ class Moon:
         return self.distancia * self.raioPlanetaPixel
 
     def getxm(self):
-        return self.xm
+        return self.xm 
 
     def getym(self):
         return self.ym

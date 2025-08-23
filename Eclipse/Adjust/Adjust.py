@@ -14,7 +14,7 @@ class Ajuste:
         self.a_p0 = 0.05
         self.inc_p0 = 88.
         self.rp_p0 = 1
-        self.rsun = rsun
+        self.rsun = rsun # to-do: mudar
         self.periodo = periodo
 
         self.time = time
@@ -23,7 +23,7 @@ class Ajuste:
         self.flux_err = numpy.var(self.flux)
         self.data = (self.time, self.flux, self.flux_err)
 
-        self.nwalkers = nwalkers
+        self.nwalkers = nwalkers 
         self.niter = niter
         self.burnin = burnin
 
@@ -42,7 +42,7 @@ class Ajuste:
     def eclipse_mcmc(self, time, theta):
         u1, u2, semiEixoUA, anguloInclinacao, raioPlanJup = theta
 
-        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,raioPlanJup,semiEixoUA)
+        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,raioPlanJup,semiEixoUA) # to-do: gastando memoria a toa?
         
         estrela_ = Estrela(373, self.rsun, 240., u1, u2, 856)
         Nx = estrela_.getNx()
@@ -101,7 +101,7 @@ class AjusteManchado:
         self.anguloInclinacao = eclipse.planeta_.anguloInclinacao
         self.raioPlanJup = eclipse.planeta_.raioPlanJup
 
-        self.rsun = rsun
+        self.rsun = rsun # to-do: mudar?
         self.periodo = periodo
 
         self.time = time
@@ -138,7 +138,7 @@ class AjusteManchado:
     #----------------------MCMC------------------------#
     #--------------------------------------------------#
     def eclipse_mcmc(self, time, theta):
-        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA)
+        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA) # to-do: gastando memoria?
         
         estrela_ = Estrela(373, self.rsun, 240., self.u1, self.u2, 856)
         Nx = estrela_.getNx()
@@ -147,7 +147,7 @@ class AjusteManchado:
         
         
         for i in range(len(theta)//4):
-            # TO-DO: Mudar essa função que esta sendo chamada aqui 
+            # to-do: Mudar essa função que esta sendo chamada aqui 
             # intensidade, raio, latitude, longitude
             raioRStar = theta[(i*4)+2]
             intensidade = theta[(i*4)+3]
