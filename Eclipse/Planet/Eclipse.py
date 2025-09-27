@@ -39,13 +39,13 @@ import platform
 
 class Eclipse:
    
-    def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta, teste: int, cmap = "hot"):
+    def __init__(self, Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta, cmap = "hot"):
         '''
         :parâmetro Nx e Ny: tamanho da matriz estrela 
         :parâmetro raioEstrelaPixel: raio da estrela em pixel 
         :parâmetro estrelaManchada: objeto ESTRELA passado como estrelaManchada apos a inserção de manchas
         '''
-        self.teste = teste
+        self.teste = 1 # to-do: lembrar de apagar 
         self.cmap = cmap 
         self.Nx = Nx
         self.Ny = Ny
