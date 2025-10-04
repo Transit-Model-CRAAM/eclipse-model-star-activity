@@ -121,7 +121,6 @@ class Estrela:
             self.p1x = p1x
             self.p1y = p1y
             self.opacidade = opacidade
-            self.temperatura = temperatura
             self.velocidade = velocidade 
             self.taxa_esfriamento = taxa_esfriamento
 

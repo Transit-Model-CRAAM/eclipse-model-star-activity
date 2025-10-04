@@ -1,13 +1,13 @@
 from scipy import interpolate
 import emcee
 from Planet.Planeta import Planeta
-from Star.Estrela import Estrela #estrela e eclipse:: extensões de programas auxiliares que realizam o cálculo da curva de luz.
+from Star.Estrela import Estrela  #estrela e eclipse:: extensões de programas auxiliares que realizam o cálculo da curva de luz.
 from Planet.Eclipse import Eclipse
 from Misc.Verify import converte
 import numpy
 
 class Ajuste:
-    
+
     def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, rsun = 1, periodo = 1):
         self.u1_p0 = 0.5
         self.u2_p0 = 0.1
@@ -201,15 +201,22 @@ class AjusteManchado:
     #--------------------------------------------------#
 
 class AjusteCME: 
-    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, ndim, eclipse: Eclipse, rsun = 1, periodo = 1):
-        self.raio_cme = 50
-        self.p0x = 400
-        self.p0y = 220
-        self.p1x = 410
-        self.p1y = 250
-        self.opacidade = 0.7
-        self.velocidade_cme = 0.1
-        self.taxa_esfriamento = 10
+    '''
+    Alias for Estrela.EjecaoMassa
+
+    cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento
+    '''
+    EjecaoMassa = Estrela.EjecaoMassa
+
+    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, ndim, eclipse: Eclipse, cme: EjecaoMassa, rsun = 1, periodo = 1):
+        self.raio_cme = cme.raio
+        self.p0x = cme.p0x
+        self.p0y = cme.p0y
+        self.p1x = cme.p1x
+        self.p1y = cme.p1y
+        self.opacidade = cme.opacidade
+        self.velocidade_cme = cme.velocidade
+        self.taxa_esfriamento = cme.taxa_esfriamento
 
         try:
             self.manchas: Estrela.Mancha = eclipse.estrela_.manchas
