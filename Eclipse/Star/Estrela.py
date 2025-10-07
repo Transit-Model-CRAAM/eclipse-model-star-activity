@@ -153,6 +153,8 @@ class Estrela:
         
         # Equacao com 4 coeficientes de limbo 
         # Não linear de quatro termos (Claret)
+        
+        # TODO: Ajustar o memory leak também pra função de Claret aqui
         if (self.coeficienteTres and self.coeficienteQuatro): 
             my_func.criaEstrelaClaret.restype = ndpointer(dtype=c_int, ndim=2, shape=(self.tamanhoMatriz,self.tamanhoMatriz))
             estrelaMatriz = my_func.criaEstrelaClaret(linha,
@@ -166,8 +168,10 @@ class Estrela:
                                                     c_float(self.coeficienteQuatro))
             return estrelaMatriz
         # Equacao coeficiente de limbo quadrático
-        my_func.criaEstrela.restype = ndpointer(dtype=c_int, ndim=2, shape=(self.tamanhoMatriz,self.tamanhoMatriz))
-        estrelaMatriz = my_func.criaEstrela(linha,
+
+        # Cria a matriz estrela
+        my_func.criaEstrela.restype = POINTER(c_int)
+        estrela_ptr = my_func.criaEstrela(linha,
                                             coluna,
                                             self.tamanhoMatriz,
                                             c_float(self.raio),
@@ -175,7 +179,15 @@ class Estrela:
                                             c_float(self.coeficienteHum),
                                             c_float(self.coeficienteDois))
 
-        del my_func
+        # Transforma a matriz estrela em um objeto numpy
+        estrelaMatriz = np.ctypeslib.as_array(estrela_ptr, shape=(self.tamanhoMatriz, self.tamanhoMatriz)).copy()
+
+        # Libera a memória alocada via malloc para a estrela
+        my_func.liberaEstrela.argtypes = [POINTER(c_int)]
+        my_func.liberaEstrela(estrela_ptr)
+
+        del estrela_ptr
+
         return estrelaMatriz
     
     def criaEstrelaByFits(self, path: String):

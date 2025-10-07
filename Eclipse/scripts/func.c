@@ -6,32 +6,44 @@
 
 int* criaEstrela(int lin, int col, int tamanhoMatriz, float raio, float intensidadeMaxima, float coeficienteHum, float coeficienteDois) {
 	int i, j;
-	int *estrela = (int*) malloc (lin * col * sizeof(int*));
+	int *estrela = (int*) malloc (lin * col * sizeof(int));
 	int index;
+	float centro = tamanhoMatriz/2.0f;
+	float raioSquared = raio * raio;
 
-#pragma omp parallel {
-    #pragma omp for collapse(2)
-        for(i=0;i<lin;i++) {
-            for(j=0;j<col;j++) {
-                index = i*(lin) + j;
-                estrela[index] = 0;	
-            }
-        }
-        float distanciaCentro;
-        float cosTheta;
-        
-    #pragma omp for collapse(2)
-        for(j=0;j<col;j++){
-            for(i=0;i<lin;i++){
-                distanciaCentro = sqrt(pow(i-tamanhoMatriz/2,2) + pow(j-tamanhoMatriz/2,2));
-                if(distanciaCentro <= raio){
-                    cosTheta = sqrt(1-pow(distanciaCentro/raio,2));
-                    index = i*(lin) + j;
-                    estrela[index] = (int) (intensidadeMaxima * (1 - coeficienteHum * (1 - cosTheta) - coeficienteDois * (pow(1 - cosTheta,2))));
-                }
-            }
-        }
-    }
+#pragma omp parallel
+{
+#pragma omp for collapse(2)
+	for(i=0;i<lin;i++){
+		for(j=0;j<col;j++){
+			index = i*(col) + j;  // Fixed index calculation
+			estrela[index] = 0;	
+		}
+	}
+	float distanciaCentroSquared;
+	float cosTheta;
+	float dx, dy;
+	float oneMinusCosTheta, oneMinusCosThetaSquared;
+
+#pragma omp for collapse(2)
+	for(j=0;j<col;j++){
+		for(i=0;i<lin;i++){
+			dx = i - centro;
+			dy = j - centro;
+			distanciaCentroSquared = dx*dx + dy*dy;
+
+			if(distanciaCentroSquared <= raioSquared){
+				cosTheta = sqrt(1.0f - distanciaCentroSquared/raioSquared);
+				oneMinusCosTheta = 1.0f - cosTheta;
+				oneMinusCosThetaSquared = oneMinusCosTheta * oneMinusCosTheta;
+
+				index = i*(col) + j;  // Fixed index calculation
+				estrela[index] = (int) (intensidadeMaxima * (1.0f - coeficienteHum * oneMinusCosTheta - coeficienteDois * oneMinusCosThetaSquared));
+			}
+		}
+	}
+}
+
 	return estrela;
 }
 
@@ -133,4 +145,11 @@ double curvaLuzLua(double x0, double y0, double xm, double ym, double rMoon, int
 	// Normalizacao
 	valor = valor/maxCurvaLuz;
 	return valor;
+}
+
+// Function to free memory allocated by criaEstrela
+void liberaEstrela(int *estrela) {
+    if (estrela != NULL) {
+        free(estrela);
+    }
 }
