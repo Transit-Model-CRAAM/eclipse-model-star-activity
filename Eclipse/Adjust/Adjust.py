@@ -216,7 +216,9 @@ class AjusteCME:
         self.p1y = cme.p1y
         self.opacidade = cme.opacidade
         self.velocidade_cme = cme.velocidade
+        self.altura_inicial_cme = cme.altura_inicial
         self.taxa_esfriamento = cme.taxa_esfriamento
+        self.geometria_cme = cme.geometriaCME
 
         try:
             self.manchas: Estrela.Mancha = eclipse.estrela_.manchas
@@ -293,7 +295,7 @@ class AjusteCME:
             velocidade_cme = theta[6]
             taxa_esfriamento = theta[7]
 
-            cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento)
+            cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento, self.taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
 
             estrela_.addCme(cme)
 
@@ -328,18 +330,7 @@ class AjusteCME:
 
             estrela_.criaEstrelaManchada()
 
-            
-            temperatura_cme = estrela_.temperaturaEfetiva
-            raio_cme = self.raio_cme
-            p0x = self.p0x
-            p0y = self.p0y
-            p1x = self.p1x
-            p1y = self.p1y
-            opacidade = self.opacidade
-            velocidade_cme = self.velocidade_cme
-            taxa_esfriamento = self.taxa_esfriamento
-
-            cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento)
+            cme = Estrela.EjecaoMassa(self.raio_cme, self.p0x, self.p0y, self.p1x, self.p1y, self.opacidade, estrela_.temperaturaEfetiva, self.velocidade_cme, self.taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
 
             estrela_.addCme(cme)
 

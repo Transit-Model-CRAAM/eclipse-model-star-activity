@@ -18,6 +18,7 @@ verify:função criada para validar entradas, por exemplo numeros nao float/int 
 '''
 
 
+from statistics import geometric_mean
 from tokenize import String
 from typing import List
 import matplotlib.pyplot as plt
@@ -37,6 +38,19 @@ from pathlib import Path
 from PIL import Image
 from matplotlib.animation import FuncAnimation
 from scipy.ndimage import zoom
+from enum import Enum, auto
+
+class GeometriaCME(Enum):
+        """
+        Define as formas visuais possíveis para a Ejeção de Massa Coronal.
+        """
+        # 'CAPSULA'. Representa a visão "de cima" (top-down)
+        # da base da erupção.
+        PROJECAO_DISCO = auto()   
+            
+        # 'GOTA'. Representa a visão de "perfil" (side-on)
+        # da erupção, como vista no limbo estelar.
+        VISAO_PERFIL = auto()   
 
 class Estrela:
     '''
@@ -110,10 +124,10 @@ class Estrela:
             self.intensidade = intensidade # em relacao a intensidade da estrela (maior que 1)
             self.raio = raio # em relacao ao raio da estrela
             self.latitude = latitude 
-            self.longitude = longitude
+            self.longitude = longitude    
 
     class EjecaoMassa: 
-        def __init__(self, raio, p0x, p0y, p1x, p1y, opacidade, temperatura, velocidade, taxa_esfriamento): 
+        def __init__(self, raio, p0x, p0y, p1x, p1y, opacidade, temperatura, velocidade, taxa_esfriamento, altura_inicial, geometriaCME: GeometriaCME): 
             self.raio = raio
             self.temperatura = temperatura
             self.p0x = p0x
@@ -123,7 +137,9 @@ class Estrela:
             self.opacidade = opacidade
             self.velocidade = velocidade 
             self.taxa_esfriamento = taxa_esfriamento
-
+            self.altura_inicial = altura_inicial
+            self.geometriaCME = geometriaCME
+        
     def criaEstrela(self): 
         # Obter o caminho absoluto do diretório atual
         dir_atual = os.path.dirname(os.path.abspath(__file__))
@@ -311,6 +327,9 @@ class Estrela:
         # shape 
         # size
 
+        if self.cme.geometriaCME == GeometriaCME.VISAO_PERFIL: 
+            return self.ejecaoDeMassaGota(temperatura, raio, opacidade_cme)
+
         coroa = self.createCoroa()
         
         p0 = (self.cme.p0x, self.cme.p0y)
@@ -321,9 +340,117 @@ class Estrela:
 
         return coroa
 
+    def ejecaoDeMassaGota(self, temperatura, raio, opacidade_cme): 
+        # latitude 
+        # longitude 
+        # inclinacao
+        # shape 
+        # size
+
+        coroa = self.createCoroa()
+        
+        # --- Parâmetros para a gota ---
+        # (p0x, p0y) será a ponta pontuda
+        ponta_superior = (self.cme.p0x, self.cme.p0y) 
+        
+        # (p1x, p1y) será o centro da base redonda
+        centro_base = (self.cme.p1x, self.cme.p1y)
+        
+        # 'raio' define o quão "gorda" será a base da gota
+        raio_base = raio 
+        
+        intensidade = opacidade_cme * ((temperatura * 240) / self.temperaturaEfetiva) + (1 - opacidade_cme) * 240
+
+        # --- Substituição da Lógica de Desenho ---
+        # Trocamos a linha pela gota:
+        # cv.line(coroa, ponta_superior, centro_base, intensidade, raio) # <- LINHA ANTIGA
+        
+        # Nova função de desenho:
+        # (Assumindo que 'desenharGota' é um método da mesma classe, use self.desenharGota)
+        self.desenharGota(coroa, ponta_superior, centro_base, raio_base, intensidade)
+
+        return coroa
+
+    def desenharGota(self, imagem, ponta_superior, centro_base, raio_base, cor):
+        """
+           Desenha uma 'gota' preenchida (círculo com um cone pontudo) na imagem.
+
+           Argumentos:
+           imagem (np.array): A imagem 'coroa' onde o desenho será feito.
+           ponta_superior (tuple): Coordenada (x, y) da ponta superior da gota.
+           centro_base (tuple): Coordenada (x, y) do centro da base redonda.
+           raio_base (int): O raio da base redonda.
+           cor (float): A intensidade (cor) escalar do desenho.
+       """
+
+        cor_bgr = (float(cor), float(cor), float(cor))
+
+        # 1. Desenha a base redonda (círculo preenchido)
+        # O -1 no final significa "preenchido"
+        # Usamos a nova 'cor_bgr'
+        cv.circle(imagem, centro_base, int(raio_base), cor_bgr, -1)
+
+        # 2. Define os vértices do 'cone' (polígono) que liga a ponta ao círculo
+
+        pt_esquerda = (
+            int(centro_base[0] - raio_base), int(centro_base[1]))
+        pt_direita = (int(centro_base[0] + raio_base), int(centro_base[1]))
+
+        vertices = np.array(
+            [pt_esquerda, pt_direita, ponta_superior], dtype=np.int32)
+
+        # 3. Desenha o cone (polígono preenchido)
+        # Usamos a nova 'cor_bgr' AQUI TAMBÉM
+        cv.fillPoly(imagem, [vertices], cor_bgr)
+    
+        
     def createCoroa(self): 
         matriz_coroa = np.zeros((self.tamanhoMatriz, self.tamanhoMatriz))
         return matriz_coroa
+
+    def get_area_cme_km2(self):
+        """
+        Calcula a área física da CME em quilômetros quadrados.
+        """
+        
+        if not self.cme:
+            return 0.0
+
+        # --- 1. Calcular a escala de área (km²/pixel²) ---
+        escala_km_por_pixel = self.raioSun / self.raio
+        fator_de_conversao_area = escala_km_por_pixel ** 2
+
+        # --- 2. Calcular a área da CME em pixels² ---
+        area_cme_pixels = 0.0
+        cme = self.cme
+        r_pixel = cme.raio
+
+        if cme.geometriaCME == GeometriaCME.PROJECAO_DISCO:
+            # Área da "Cápsula"
+            p0 = np.array([cme.p0x, cme.p0y])
+            p1 = np.array([cme.p1x, cme.p1y])
+            L = np.linalg.norm(p0 - p1)  # Distância entre p0 e p1 (comprimento do retângulo)
+            area_circulo = np.pi * (r_pixel**2) # 2. Área do círculo (os dois semicírculos)
+            area_retangulo = L * (2 * r_pixel)  # 3. Área do retângulo
+            area_cme_pixels = area_circulo + area_retangulo
+        
+        elif cme.geometriaCME == GeometriaCME.VISAO_PERFIL:
+            # Área da "Gota"
+            area_semicirculo = 0.5 * np.pi * (r_pixel**2) # 1. Área do Semicírculo
+            altura_triangulo = abs(cme.p0y - cme.p1y)  # 2. Altura do triângulo (distância vertical entre a ponta e a base)
+            area_triangulo = r_pixel * altura_triangulo # 3. Área do triângulo (Base = 2*r)
+            area_cme_pixels = area_semicirculo + area_triangulo
+
+        # --- 3. Converter para Km² ---
+        area_cme_km2 = area_cme_pixels * fator_de_conversao_area
+        
+        area_estrela_pixels = np.pi * (self.raio**2)
+        area_relativa = area_cme_pixels / area_estrela_pixels
+
+        print(f"Área da CME relativa à Estrela: {area_relativa * 100:.2f} %")
+        print(f"Área da CME: {area_cme_km2:,.2f} km²")
+        return area_cme_km2
+
    
     ####### WIP: Inserção de flares
     def flares(self): #recebe como parâmetro a estrela atualizada
