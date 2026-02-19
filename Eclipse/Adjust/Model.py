@@ -79,6 +79,8 @@ class Modelo:
     
         # utiiza-se o PDCSAP_FLUX porque será realizado a análise no trânsito.
         lc = search_lightcurve(self.star_name, cadence = self.cadence, mission = self.mission).download_all()
+        self.lc = lc 
+
         time = [] # time = array com os dados de tempo
         flux = [] # flux = array com os dados de fluxo
         flux_err = [] # flux_err = array com os dados de erro do fluxo
@@ -307,6 +309,37 @@ class Modelo:
         self.ts_model = numpy.array(eclipse1.getTempoHoras())
         
         return self.lc_model, self.ts_model
+
+    def plot_lc(self,lim_inicial, lim_final): 
+        # Download all available light curve files
+        lc_collection = self.lc # Renamed to clarify it's a collection
+
+        # **Filter data with flag = 0**
+        # Iterate through the collection and filter each light curve
+        filtered_lcs = []
+        for light_curve in lc_collection:
+            filtered_lcs.append(light_curve[light_curve.quality == 0])
+
+        # Normalize each filtered light curve before stitching
+        normalized_lcs = []
+        for light_curve in filtered_lcs:
+            # Normalize each light curve individually
+            normalized_lcs.append(light_curve.normalize())
+
+        # Stitch the normalized light curves into a single LightCurve object
+        if normalized_lcs:
+            stitched_lc = normalized_lcs[0]
+            for i in range(1, len(normalized_lcs)):
+                # Append the normalized light curves
+                stitched_lc = stitched_lc.append(normalized_lcs[i])
+
+        # Plot the light curve
+        stitched_lc.plot()
+        plt.title("Curva de luz")
+        plt.xlabel("Tempo (dias)")
+        plt.ylabel("Fluxo")
+        plt.xlim(lim_inicial,lim_final)
+        plt.show()
 
     #--------------------------------------------------#
     def retornaParametros(self):
