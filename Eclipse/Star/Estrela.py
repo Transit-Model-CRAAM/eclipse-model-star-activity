@@ -334,7 +334,12 @@ class Estrela:
         
         p0 = (self.cme.p0x, self.cme.p0y)
         p1 = (self.cme.p1x, self.cme.p1y)
-        intensidade = opacidade_cme * ((temperatura * 240) / self.temperaturaEfetiva) + (1 - opacidade_cme) * 240
+
+        intensidade = opacidade_cme * ((temperatura * 240) / self.temperaturaEfetiva) + (1 - opacidade_cme) * 240 # original
+        print("Intensidade >>>", intensidade)
+        # to-do: testar essas duas equacoes
+        #intensidade = opacidade_cme * ((temperatura / self.temperaturaEfetiva) * 240) + (1 - opacidade_cme) * 240
+        # intensidade = opacidade * (fator_contraste * intensidade_max) + (1 - opacidade) * intensidade_max
 
         cv.line(coroa, p0, p1, intensidade, raio)
 
