@@ -1,4 +1,4 @@
-# Projeto ECLIPSE
+# [🇧🇷 PR BR] Projeto ECLIPSE
 
 Este repositório reúne uma coleção de scripts voltados à análise de curvas de luz de estrelas hospedeiras por meio do método de trânsito, com foco na detecção e caracterização de fenômenos como manchas estelares, fáculas e possíveis assinaturas de CMEs (Coronal Mass Ejections).
 

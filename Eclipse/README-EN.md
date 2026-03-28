@@ -1,4 +1,4 @@
-# ECLIPSE Project
+# [🇺🇸 EN] ECLIPSE Project
 
 This repository contains a collection of scripts dedicated to the analysis of stellar light curves using the transit method, with a focus on detecting and characterizing phenomena such as starspots, faculae, and potential signatures of CMEs (Coronal Mass Ejections).
 
