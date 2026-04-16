@@ -321,12 +321,6 @@ class Estrela:
 
     ####### CME (Ejeção de Massa Estelar)
     def ejecaoDeMassa(self, temperatura, raio, opacidade_cme): 
-        # latitude 
-        # longitude 
-        # inclinacao
-        # shape 
-        # size
-
         if self.cme.geometriaCME == GeometriaCME.VISAO_PERFIL: 
             return self.ejecaoDeMassaGota(temperatura, raio, opacidade_cme)
 
@@ -336,7 +330,7 @@ class Estrela:
         p1 = (self.cme.p1x, self.cme.p1y)
 
         intensidade = opacidade_cme * ((temperatura * 240) / self.temperaturaEfetiva) + (1 - opacidade_cme) * 240 # original
-        print("Intensidade >>>", intensidade)
+        print("intensidade >>>", intensidade)
         # to-do: testar essas duas equacoes
         #intensidade = opacidade_cme * ((temperatura / self.temperaturaEfetiva) * 240) + (1 - opacidade_cme) * 240
         # intensidade = opacidade * (fator_contraste * intensidade_max) + (1 - opacidade) * intensidade_max
@@ -346,12 +340,6 @@ class Estrela:
         return coroa
 
     def ejecaoDeMassaGota(self, temperatura, raio, opacidade_cme): 
-        # latitude 
-        # longitude 
-        # inclinacao
-        # shape 
-        # size
-
         coroa = self.createCoroa()
         
         # --- Parâmetros para a gota ---
