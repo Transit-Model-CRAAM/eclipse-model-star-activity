@@ -15,8 +15,7 @@ TEXTS = {
         "ylabel_flux": "Fluxo Normalizado",
         "ylabel_diff": "Diferença",
         "label_target": "Obs Alvo ({label})",
-        "label_average": "Obs Média de {n} Trânsitos",
-        "label_model": "Modelo Teórico"
+        "label_average": "Obs Média de {n} Trânsitos"
     },
     "EN": {
         "title": "Lightcurve from telescope {mission} x Model lightcurve",
