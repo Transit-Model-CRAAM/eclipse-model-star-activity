@@ -10,6 +10,10 @@ __status__ = "Production"
 #%matplotlib nbagg
 #%matplotlib inline
 
+import sys
+import os
+sys.path.insert(0, os.path.abspath('..'))
+
 from typing import List
 import scipy
 from Planet.Planeta import Planeta

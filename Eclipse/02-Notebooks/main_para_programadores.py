@@ -1,6 +1,9 @@
 '''
 main programado para profissionais e estudantes familiarizados com a área 
 '''
+import sys
+import os
+sys.path.insert(0, os.path.abspath('../01-Core'))
 
 import numpy as np
 from matplotlib import pyplot

@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath('..'))
+
 from scipy import interpolate
 import emcee
 from Planet.Planeta import Planeta

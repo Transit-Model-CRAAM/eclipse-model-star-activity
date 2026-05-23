@@ -1,7 +1,10 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath('..'))
+
 import string
 import numpy as np
 import math
-
 
 ############ adição de luas ###########
 class Moon:
