@@ -18,10 +18,6 @@ matplotlib:
 estrela: arquivo de programa onde são calculados os parâmetros da estrela, dado os inputs do usuário (raio, intensidade,etc)
 verify:função criada para validar entradas, por exemplo numeros nao float/int ou negativos
 '''
-import sys
-import os
-sys.path.insert(0, os.path.abspath('..'))
-
 from tokenize import String
 from IPython.display import HTML
 import cv2 as cv

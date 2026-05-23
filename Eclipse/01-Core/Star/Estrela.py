@@ -17,11 +17,6 @@ numpy
 verify:função criada para validar entradas, por exemplo numeros nao float/int ou negativos
 '''
 
-
-import sys
-import os
-sys.path.insert(0, os.path.abspath('..'))
-
 from statistics import geometric_mean
 from tokenize import String
 from typing import List
