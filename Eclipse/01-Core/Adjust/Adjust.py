@@ -351,21 +351,25 @@ class AjusteCME:
         return -0.5 * numpy.sum(((flux - self.eclipse_mcmc(time, theta))/flux_err) ** 2)
     # --------------------------------------------------#
     def lnprior(self, theta):
-        for i in range(len(theta)//4):
-            # TODO: Descobrir valores mínimo e máximo de cada uma das variáveis
-            if (
-                (0 <= theta[0] <= self.raio)
-                and (0 <= theta[1] <= self.tamanhoMatriz)
-                and (0 <= theta[2] <= self.tamanhoMatriz)
-                and (0 <= theta[3] <= self.tamanhoMatriz)
-                and (0 <= theta[4] <= self.tamanhoMatriz)
-                and (0 <= theta[5] <= 1)
-                and (0 <= theta[6] <= 10)
-                and (0 <= theta[7] <= 50)
-            ):
-                continue
-            return -numpy.inf
-        return 0.0
+        raio_cme, p0x, p0y, p1x, p1y, opacidade, velocidade_cme, taxa_esfriamento = theta
+        
+        # Margem de ±100 pixels em torno dos valores iniciais
+        margem = 100
+        
+        if (
+            10 <= raio_cme <= 300 # raio físico razoável
+            and self.p0x - margem <= p0x <= self.p0x + margem  # centrado no valor inicial
+            and self.p0y - margem <= p0y <= self.p0y + margem
+            and self.p1x - margem <= p1x <= self.p1x + margem
+            and self.p1y - margem <= p1y <= self.p1y + margem
+            and self.opacidade - 0.2 <= opacidade <= self.opacidade + 0.2
+            and 0.05 <= velocidade_cme <= 0.5 # range físico em AU/h 
+            #and 10 <= taxa_esfriamento <= 70 obs 03
+            #and 80 <= taxa_esfriamento <= 200 obs 06
+            and 30 <= taxa_esfriamento <= 200 # centrado no valor inicial
+        ):
+            return 0.0
+        return -numpy.inf
     # --------------------------------------------------#
     def lnprob(self, theta, time, flux, flux_err):
         lp = self.lnprior(theta)
