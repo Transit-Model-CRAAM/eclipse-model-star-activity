@@ -1,0 +1,391 @@
+from scipy import interpolate
+import emcee
+from Planet.Planeta import Planeta
+from Star.Estrela import Estrela  #estrela e eclipse:: extensões de programas auxiliares que realizam o cálculo da curva de luz.
+from Planet.Eclipse import Eclipse
+from Misc.Verify import converte
+import numpy
+
+class Ajuste:
+
+    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, rsun = 1, periodo = 1):
+        self.u1_p0 = 0.5
+        self.u2_p0 = 0.1
+        self.a_p0 = 0.05
+        self.inc_p0 = 88.
+        self.rp_p0 = 1
+        self.rsun = rsun # to-do: mudar
+        self.periodo = periodo
+
+        self.time = time
+        self.flux = flux
+
+        self.flux_err = numpy.var(self.flux)
+        self.data = (self.time, self.flux, self.flux_err)
+
+        self.nwalkers = nwalkers 
+        self.niter = niter
+        self.burnin = burnin
+
+        self.initial = numpy.array([self.u1_p0, self.u2_p0, self.a_p0, self.inc_p0, self.rp_p0])
+        self.ndim = len(self.initial)
+
+        variations = numpy.array([0.001, 0.001, 0.001, 0.5, 0.01])
+
+        self.p0 = [numpy.array(self.initial) + variations * numpy.random.randn(self.ndim) for i in range(self.nwalkers)]
+
+        self.tratamento = tratamento
+
+    #--------------------------------------------------#
+    #----------------------MCMC------------------------#
+    #--------------------------------------------------#
+    def eclipse_mcmc(self, time, theta):
+        u1, u2, semiEixoUA, anguloInclinacao, raioPlanJup = theta
+
+        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,raioPlanJup,semiEixoUA) # to-do: gastando memoria a toa?
+        
+        estrela_ = Estrela(373, self.rsun, 240., u1, u2, 856)
+        Nx = estrela_.getNx()
+        Ny = estrela_.getNy()
+        raioEstrelaPixel = estrela_.getRaioStar()
+        
+        # semiEixoUA, raioPlanJup, periodo, anguloInclinacao, ecc, anom, raioStar,mass): 
+        planeta_ = Planeta(semiEixoUA, raioPlanJup, self.periodo, anguloInclinacao, 0, 0, estrela_.getRaioSun(), self.tratamento.mass)
+        
+        # Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta
+        eclipse = Eclipse(Nx,Ny,raioEstrelaPixel,estrela_, planeta_)
+        
+        eclipse.setTempoHoras(1.)
+        eclipse.criarEclipse(anim = False, plot= False)
+        lc0 = numpy.array(eclipse.getCurvaLuz()) 
+        ts0 = numpy.array(eclipse.getTempoHoras()) 
+        return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
+        
+    #--------------------------------------------------#
+    def lnlike(self, theta, time, flux, flux_err):
+        return -0.5 * numpy.sum(((flux - self.eclipse_mcmc(time, theta))/flux_err) ** 2)
+    #--------------------------------------------------#
+    def lnprior(self, theta):
+        u1, u2, semiEixoUA, anguloInclinacao, rp = theta
+        if 0.0 < u1 < 1.0 and 0.0 < u2 < 1.0 and 0.001 < semiEixoUA < 1 and 80. < anguloInclinacao < 90 and 0.01 < rp < 5:
+            return 0.0
+        return -numpy.inf
+    #--------------------------------------------------#
+    def lnprob(self, theta, time, flux, flux_err):
+        lp = self.lnprior(theta)
+        if not numpy.isfinite(lp):
+            return -numpy.inf
+        return lp + self.lnlike(theta, time, flux, flux_err)
+    #--------------------------------------------------#
+    def main(self):
+        self.sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.lnprob, args=self.data)
+
+        print("Running burn-in...")
+        self.p0, _, _ = self.sampler.run_mcmc(self.p0, self.burnin, progress=True)
+        self.sampler.reset()
+
+        print("Running production...")    
+        self.pos, self.prob, self.state = self.sampler.run_mcmc(self.p0, self.niter, progress=True)
+
+        return self.sampler, self.pos, self.prob, self.state
+    #--------------------------------------------------#
+
+class AjusteManchado: 
+    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, ndim, eclipse: Eclipse, rsun = 1, periodo = 1):
+        
+        self.manchas: Estrela.Mancha = eclipse.estrela_.manchas
+
+        self.u1 = eclipse.estrela_.coeficienteHum
+        self.u2 = eclipse.estrela_.coeficienteDois
+        self.semiEixoUA = eclipse.planeta_.semiEixoUA
+        self.anguloInclinacao = eclipse.planeta_.anguloInclinacao
+        self.raioPlanJup = eclipse.planeta_.raioPlanJup
+
+        self.rsun = rsun # to-do: mudar?
+        self.periodo = periodo
+
+        self.time = time
+        self.flux = flux
+
+        self.flux_err = numpy.var(self.flux)
+        self.data = (self.time, self.flux, self.flux_err)
+
+        self.nwalkers = nwalkers
+        self.niter = niter
+        self.burnin = burnin
+
+
+        self.initial = numpy.array([])
+
+        # limitacao do numero de manchas
+        if(ndim > len(self.manchas)):
+            ndim = len(self.manchas)
+        elif(ndim < 1):
+            ndim = 1
+            
+        for i in range(ndim):
+            self.initial = numpy.append(self.initial, [self.manchas[i].longitude, self.manchas[i].latitude, self.manchas[i].raio, self.manchas[i].intensidade])
+
+        variations = numpy.array([0.8, 0.8, 0.001, 0.01])
+
+        ndim_variations = numpy.tile(variations, ndim)
+        
+        self.ndim = len(self.initial)
+        self.p0 = [numpy.array(self.initial) + ndim_variations * numpy.random.randn(self.ndim) for i in range(self.nwalkers)]
+        self.tratamento = tratamento
+
+    #--------------------------------------------------#
+    #----------------------MCMC------------------------#
+    #--------------------------------------------------#
+    def eclipse_mcmc(self, time, theta):
+        raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA) # to-do: gastando memoria?
+        
+        estrela_ = Estrela(373, self.rsun, 240., self.u1, self.u2, 856)
+        Nx = estrela_.getNx()
+        Ny = estrela_.getNy()
+        raioEstrelaPixel = estrela_.getRaioStar()
+        
+        
+        for i in range(len(theta)//4):
+            # to-do: Mudar essa função que esta sendo chamada aqui 
+            # intensidade, raio, latitude, longitude
+            raioRStar = theta[(i*4)+2]
+            intensidade = theta[(i*4)+3]
+            lat = theta[(i*4)+1]
+            long = theta[i*4]
+
+            estrela_.addMancha(Estrela.Mancha(intensidade, raioRStar, lat, long))
+        
+        estrela_.criaEstrelaManchada()
+        # semiEixoUA, raioPlanJup, periodo, anguloInclinacao, ecc, anom, raioStar,mass): 
+        planeta_ = Planeta(self.semiEixoUA, self.raioPlanJup, self.periodo, self.anguloInclinacao, 0, 0, estrela_.getRaioSun(), self.tratamento.mass)
+        
+        # Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta
+        eclipse = Eclipse(Nx,Ny,raioEstrelaPixel,estrela_, planeta_)
+
+        eclipse.setTempoHoras(1.)
+        eclipse.criarEclipse(anim = False, plot= False)
+        
+        lc0 = numpy.array(eclipse.getCurvaLuz())
+        ts0 = numpy.array(eclipse.getTempoHoras()) 
+        return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
+    #--------------------------------------------------#
+    def lnlike(self, theta, time, flux, flux_err):
+        return -0.5 * numpy.sum(((flux - self.eclipse_mcmc(time, theta))/flux_err) ** 2)
+    #--------------------------------------------------#
+    def lnprior(self, theta):
+        for i in range(len(theta)//4):
+            #if (0.0 < lat) and (0.0 < long) and (0.0 < raioRstar < 0.5) and (0.0 < intensidade <= 1):
+            if (-70 <= theta[i*4] <= 70) and (-70 <= theta[(i*4)+1] <= 70) and (0.0 < theta[(i*4)+2] < 0.5) and (0.0 < theta[(i*4)+3] <= 1):
+                continue
+            return -numpy.inf
+        return 0.0
+    #--------------------------------------------------#
+    def lnprob(self, theta, time, flux, flux_err):
+        lp = self.lnprior(theta)
+        if not numpy.isfinite(lp):
+            return -numpy.inf
+        return lp + self.lnlike(theta, time, flux, flux_err)
+    #--------------------------------------------------#
+    def main(self):
+        self.sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.lnprob, args=self.data)
+
+        print("Running burn-in...")
+        self.p0, _, _ = self.sampler.run_mcmc(self.p0, self.burnin, progress=True)
+        self.sampler.reset()
+
+        print("Running production...")    
+        self.pos, self.prob, self.state = self.sampler.run_mcmc(self.p0, self.niter, progress=True)
+
+        return self.sampler, self.pos, self.prob, self.state
+    #--------------------------------------------------#
+
+class AjusteCME: 
+    '''
+    Alias for Estrela.EjecaoMassa
+
+    cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento
+    '''
+    EjecaoMassa = Estrela.EjecaoMassa
+
+    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, ndim, eclipse: Eclipse, cme: EjecaoMassa, rsun = 1, periodo = 1):
+        self.raio_cme = cme.raio
+        self.p0x = cme.p0x
+        self.p0y = cme.p0y
+        self.p1x = cme.p1x
+        self.p1y = cme.p1y
+        self.opacidade = cme.opacidade
+        self.velocidade_cme = cme.velocidade
+        self.altura_inicial_cme = cme.altura_inicial
+        self.taxa_esfriamento = cme.taxa_esfriamento
+        self.geometria_cme = cme.geometriaCME
+
+        try:
+            self.manchas: Estrela.Mancha = eclipse.estrela_.manchas
+        except:
+            self.manchas = []
+
+        self.u1 = eclipse.estrela_.coeficienteHum
+        self.u2 = eclipse.estrela_.coeficienteDois
+        self.raio = eclipse.estrela_.raio
+        self.semiEixoUA = eclipse.planeta_.semiEixoUA
+        self.anguloInclinacao = eclipse.planeta_.anguloInclinacao
+        self.raioPlanJup = eclipse.planeta_.raioPlanJup
+        self.tamanhoMatriz = eclipse.estrela_.tamanhoMatriz
+
+        self.rsun = rsun
+        self.periodo = periodo
+
+        self.time = time
+        self.flux = flux
+
+        self.flux_err = numpy.var(self.flux)
+        self.data = (self.time, self.flux, self.flux_err)
+
+        self.nwalkers = nwalkers
+        self.niter = niter
+        self.burnin = burnin
+
+        self.initial = numpy.array([self.raio_cme, self.p0x, self.p0y, self.p1x, self.p1y, self.opacidade, self.velocidade_cme, self.taxa_esfriamento])
+        self.ndim = len(self.initial)
+
+        variations = numpy.array([1, 1, 1, 1, 1, 0.01, 0.005, 0.1])
+
+        self.ndim = len(self.initial)
+        self.p0 = [
+            numpy.concatenate([
+                (numpy.array(self.initial[:5]) + variations[:5] * numpy.random.randn(5)).astype(int),
+                self.initial[5:] + variations[5:] * numpy.random.randn(len(self.initial[5:]))
+            ])
+            for _ in range(self.nwalkers)
+        ]
+        self.tratamento = tratamento
+
+    # --------------------------------------------------#
+    # ----------------------MCMC------------------------#
+    # --------------------------------------------------#
+    def eclipse_mcmc(self, time, theta):
+        try:
+            raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA)
+
+            estrela_ = Estrela(self.raio, self.rsun, 240., self.u1, self.u2, 856)
+            Nx = estrela_.getNx()
+            Ny = estrela_.getNy()
+            raioEstrelaPixel = estrela_.getRaioStar()
+
+            # Adicionando manchas (Se existirem)
+            for mancha in self.manchas:
+                raioRStar = mancha.raio
+                intensidade = mancha.intensidade
+                lat = mancha.latitude
+                long = mancha.longitude
+
+                estrela_.addMancha(Estrela.Mancha(intensidade, raioRStar, lat, long))
+
+            estrela_.criaEstrelaManchada()
+
+            # Adicionando CME
+            temperatura_cme = estrela_.temperaturaEfetiva
+            raio_cme = int(theta[0])
+            p0x = int(theta[1])
+            p0y = int(theta[2])
+            p1x = int(theta[3])
+            p1y = int(theta[4])
+            opacidade = theta[5]
+            velocidade_cme = theta[6]
+            taxa_esfriamento = theta[7]
+
+            cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento, self.taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
+
+            estrela_.addCme(cme)
+
+            # semiEixoUA, raioPlanJup, periodo, anguloInclinacao, ecc, anom, raioStar,mass):
+            planeta_ = Planeta(self.semiEixoUA, self.raioPlanJup, self.periodo, self.anguloInclinacao, 0, 0, estrela_.getRaioSun(), self.tratamento.mass)
+
+            # Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta
+            eclipse = Eclipse(Nx,Ny,raioEstrelaPixel,estrela_, planeta_)
+
+            eclipse.setTempoHoras(1.)
+            eclipse.criarEclipse(anim = False, plot= False)
+
+            lc0 = numpy.array(eclipse.getCurvaLuz())
+            ts0 = numpy.array(eclipse.getTempoHoras()) 
+            return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
+        except:
+            raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA)
+
+            estrela_ = Estrela(self.raio, self.rsun, 240., self.u1, self.u2, 856)
+            Nx = estrela_.getNx()
+            Ny = estrela_.getNy()
+            raioEstrelaPixel = estrela_.getRaioStar()
+
+            # Adicionando manchas (Se existirem)
+            for mancha in self.manchas:
+                raioRStar = mancha.raio
+                intensidade = mancha.intensidade
+                lat = mancha.latitude
+                long = mancha.longitude
+
+                estrela_.addMancha(Estrela.Mancha(intensidade, raioRStar, lat, long))
+
+            estrela_.criaEstrelaManchada()
+
+            cme = Estrela.EjecaoMassa(self.raio_cme, self.p0x, self.p0y, self.p1x, self.p1y, self.opacidade, estrela_.temperaturaEfetiva, self.velocidade_cme, self.taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
+
+            estrela_.addCme(cme)
+
+            # semiEixoUA, raioPlanJup, periodo, anguloInclinacao, ecc, anom, raioStar,mass):
+            planeta_ = Planeta(self.semiEixoUA, self.raioPlanJup, self.periodo, self.anguloInclinacao, 0, 0, estrela_.getRaioSun(), self.tratamento.mass)
+
+            # Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta
+            eclipse = Eclipse(Nx,Ny,raioEstrelaPixel,estrela_, planeta_)
+
+            eclipse.setTempoHoras(1.)
+            eclipse.criarEclipse(anim = False, plot= False)
+
+            lc0 = numpy.array(eclipse.getCurvaLuz())
+            ts0 = numpy.array(eclipse.getTempoHoras()) 
+            return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
+    # --------------------------------------------------#
+    def lnlike(self, theta, time, flux, flux_err):
+        return -0.5 * numpy.sum(((flux - self.eclipse_mcmc(time, theta))/flux_err) ** 2)
+    # --------------------------------------------------#
+    def lnprior(self, theta):
+        raio_cme, p0x, p0y, p1x, p1y, opacidade, velocidade_cme, taxa_esfriamento = theta
+        
+        # Margem de ±100 pixels em torno dos valores iniciais
+        margem = 100
+        
+        if (
+            10 <= raio_cme <= 300 # raio físico razoável
+            and self.p0x - margem <= p0x <= self.p0x + margem  # centrado no valor inicial
+            and self.p0y - margem <= p0y <= self.p0y + margem
+            and self.p1x - margem <= p1x <= self.p1x + margem
+            and self.p1y - margem <= p1y <= self.p1y + margem
+            and self.opacidade - 0.2 <= opacidade <= self.opacidade + 0.2
+            and 0.05 <= velocidade_cme <= 0.5 # range físico em AU/h 
+            #and 10 <= taxa_esfriamento <= 70 obs 03
+            #and 80 <= taxa_esfriamento <= 200 obs 06
+            and 30 <= taxa_esfriamento <= 200 # centrado no valor inicial
+        ):
+            return 0.0
+        return -numpy.inf
+    # --------------------------------------------------#
+    def lnprob(self, theta, time, flux, flux_err):
+        lp = self.lnprior(theta)
+        if not numpy.isfinite(lp):
+            return -numpy.inf
+        return lp + self.lnlike(theta, time, flux, flux_err)
+    # --------------------------------------------------#
+    def main(self):
+        self.sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.lnprob, args=self.data)
+
+        print("Running burn-in...")
+        self.p0, _, _ = self.sampler.run_mcmc(self.p0, self.burnin, progress=True)
+        self.sampler.reset()
+
+        print("Running production...")    
+        self.pos, self.prob, self.state = self.sampler.run_mcmc(self.p0, self.niter, progress=True)
+
+        return self.sampler, self.pos, self.prob, self.state
+    # --------------------------------------------------#

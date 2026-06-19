@@ -1,0 +1,39 @@
+TEXTS = {
+    "PT": {
+        "title": "Curva de luz extraída do Telescópio {mission} x Curva de luz modelo",
+        "xlabel": "Eixo X (Tempo)",
+        "ylabel": "Eixo Y (Brilho da estrela)",
+        "title_avg": "Modelo Teórico vs. Curva de Luz Média de HD 189733b",
+        "xlabel_avg": "Fase Orbital (0 = Meio do Trânsito)",
+        "ylabel_avg": "Fluxo Normalizado",
+        "label_data": "Curva de Luz Média ({n} Trânsitos)",
+        "label_model": "Modelo Teórico",
+        "title_residuals": "Análise de Resíduos: Observação de {label} vs. Média",
+        "title_comparison": "Observação Individual vs. Curva Média",
+        "title_residuals_panel": "Resíduos (Obs Individual - Média)  |  $\\chi_\\nu^2 = {chi2:.2f}$",
+        "xlabel_residuals": "Fase Orbital (0 = Meio do Trânsito)",
+        "ylabel_flux": "Fluxo Normalizado",
+        "ylabel_diff": "Diferença",
+        "label_target": "Obs Alvo ({label})",
+        "label_average": "Obs Média de {n} Trânsitos"
+    },
+    "EN": {
+        "title": "Lightcurve from telescope {mission} x Model lightcurve",
+        "xlabel": "Time (in hours)",
+        "ylabel": "Star brightness",
+        "title_avg": "Theoretical Model vs. Average Light Curve of HD 189733b",
+        "xlabel_avg": "Orbital Phase (0 = Transit Midpoint)",
+        "ylabel_avg": "Normalized Flux",
+        "label_data": "Average Light Curve ({n} Transits)",
+        "label_model": "Theoretical Model",
+        "title_residuals": "Residual Analysis: Observation {label} vs. Average",
+        "title_comparison": "Individual Observation vs. Average Curve",
+        "title_residuals_panel": "Residuals (Individual Obs - Average)  |  $\\chi_\\nu^2 = {chi2:.2f}$",
+        "xlabel_residuals": "Orbital Phase (0 = Transit Midpoint)",
+        "ylabel_flux": "Normalized Flux",
+        "ylabel_diff": "Difference",
+        "label_target": "Target Obs ({label})",
+        "label_average": "Average of {n} Transits",
+        "label_model": "Theoretical Model"
+    }
+}
