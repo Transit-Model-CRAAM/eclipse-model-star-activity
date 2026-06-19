@@ -352,21 +352,19 @@ class AjusteCME:
     # --------------------------------------------------#
     def lnprior(self, theta):
         raio_cme, p0x, p0y, p1x, p1y, opacidade, velocidade_cme, taxa_esfriamento = theta
-        
+
         # Margem de ±100 pixels em torno dos valores iniciais
         margem = 100
-        
+
         if (
-            10 <= raio_cme <= 300 # raio físico razoável
+            10 <= raio_cme <= self.raio  # raio em pixels até o raio da estrela
             and self.p0x - margem <= p0x <= self.p0x + margem  # centrado no valor inicial
             and self.p0y - margem <= p0y <= self.p0y + margem
             and self.p1x - margem <= p1x <= self.p1x + margem
             and self.p1y - margem <= p1y <= self.p1y + margem
-            and self.opacidade - 0.2 <= opacidade <= self.opacidade + 0.2
-            and 0.05 <= velocidade_cme <= 0.5 # range físico em AU/h 
-            #and 10 <= taxa_esfriamento <= 70 obs 03
-            #and 80 <= taxa_esfriamento <= 200 obs 06
-            and 30 <= taxa_esfriamento <= 200 # centrado no valor inicial
+            and self.opacidade - 0.15 <= opacidade <= self.opacidade + 0.15  # ±0.15 em torno do valor inicial
+            and self.velocidade_cme - 0.05 <= velocidade_cme <= self.velocidade_cme + 0.05  # ±0.05 AU/h em torno do valor inicial
+            and self.taxa_esfriamento - 5 <= taxa_esfriamento <= self.taxa_esfriamento + 5  # ±5 em torno do valor inicial
         ):
             return 0.0
         return -numpy.inf
