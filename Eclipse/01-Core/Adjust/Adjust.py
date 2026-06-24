@@ -208,7 +208,7 @@ class AjusteCME:
     '''
     EjecaoMassa = Estrela.EjecaoMassa
 
-    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, ndim, eclipse: Eclipse, cme: EjecaoMassa, rsun = 1, periodo = 1):
+    def __init__(self,tratamento, time, flux, nwalkers, niter, burnin, ndim, eclipse: Eclipse, cme: EjecaoMassa, rsun = 1, periodo = 1, offset_fase = 0.0):
         self.raio_cme = cme.raio
         self.p0x = cme.p0x
         self.p0y = cme.p0y
@@ -235,6 +235,7 @@ class AjusteCME:
 
         self.rsun = rsun
         self.periodo = periodo
+        self.offset_fase = offset_fase
 
         self.time = time
         self.flux = flux
@@ -295,7 +296,7 @@ class AjusteCME:
             velocidade_cme = theta[6]
             taxa_esfriamento = theta[7]
 
-            cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento, self.taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
+            cme = Estrela.EjecaoMassa(raio_cme, p0x, p0y, p1x, p1y, opacidade, temperatura_cme, velocidade_cme, taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
 
             estrela_.addCme(cme)
 
@@ -309,43 +310,16 @@ class AjusteCME:
             eclipse.criarEclipse(anim = False, plot= False)
 
             lc0 = numpy.array(eclipse.getCurvaLuz())
-            ts0 = numpy.array(eclipse.getTempoHoras()) 
-            return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
+            ts0 = numpy.array(eclipse.getTempoHoras())
+            # Converte horas → fase orbital (mesma lógica de comparar_curvas_transito)
+            lc0_norm = lc0 / numpy.max(lc0)
+            meio_transito = ts0[numpy.argmin(lc0_norm)]
+            ts0_centralizado = ts0 - meio_transito
+            periodo_horas = self.periodo * 24.0
+            fase_modelo = (ts0_centralizado + self.offset_fase) / periodo_horas
+            return interpolate.interp1d(fase_modelo, lc0_norm, fill_value="extrapolate")(time)
         except:
-            raioStar, raioPlanetaRstar, semiEixoRaioStar = converte(self.rsun,self.raioPlanJup,self.semiEixoUA)
-
-            estrela_ = Estrela(self.raio, self.rsun, 240., self.u1, self.u2, 856)
-            Nx = estrela_.getNx()
-            Ny = estrela_.getNy()
-            raioEstrelaPixel = estrela_.getRaioStar()
-
-            # Adicionando manchas (Se existirem)
-            for mancha in self.manchas:
-                raioRStar = mancha.raio
-                intensidade = mancha.intensidade
-                lat = mancha.latitude
-                long = mancha.longitude
-
-                estrela_.addMancha(Estrela.Mancha(intensidade, raioRStar, lat, long))
-
-            estrela_.criaEstrelaManchada()
-
-            cme = Estrela.EjecaoMassa(self.raio_cme, self.p0x, self.p0y, self.p1x, self.p1y, self.opacidade, estrela_.temperaturaEfetiva, self.velocidade_cme, self.taxa_esfriamento, self.altura_inicial_cme, self.geometria_cme)
-
-            estrela_.addCme(cme)
-
-            # semiEixoUA, raioPlanJup, periodo, anguloInclinacao, ecc, anom, raioStar,mass):
-            planeta_ = Planeta(self.semiEixoUA, self.raioPlanJup, self.periodo, self.anguloInclinacao, 0, 0, estrela_.getRaioSun(), self.tratamento.mass)
-
-            # Nx, Ny, raio_estrela_pixel, estrela_manchada: Estrela, planeta_: Planeta
-            eclipse = Eclipse(Nx,Ny,raioEstrelaPixel,estrela_, planeta_)
-
-            eclipse.setTempoHoras(1.)
-            eclipse.criarEclipse(anim = False, plot= False)
-
-            lc0 = numpy.array(eclipse.getCurvaLuz())
-            ts0 = numpy.array(eclipse.getTempoHoras()) 
-            return interpolate.interp1d(ts0,lc0,fill_value="extrapolate")(time)
+            return -numpy.inf
     # --------------------------------------------------#
     def lnlike(self, theta, time, flux, flux_err):
         return -0.5 * numpy.sum(((flux - self.eclipse_mcmc(time, theta))/flux_err) ** 2)
