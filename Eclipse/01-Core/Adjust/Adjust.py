@@ -240,7 +240,7 @@ class AjusteCME:
         self.time = time
         self.flux = flux
 
-        self.flux_err = numpy.var(self.flux)
+        self.flux_err = numpy.std(self.flux)
         self.data = (self.time, self.flux, self.flux_err)
 
         self.nwalkers = nwalkers
@@ -329,6 +329,9 @@ class AjusteCME:
 
         # Margem de ±100 pixels em torno dos valores iniciais
         margem = 100
+        # Proteção explícita contra valores fisicamente impossíveis
+        if velocidade_cme <= 0:
+            return -numpy.inf
 
         if (
             10 <= raio_cme <= self.raio  # raio em pixels até o raio da estrela
@@ -336,8 +339,8 @@ class AjusteCME:
             and self.p0y - margem <= p0y <= self.p0y + margem
             and self.p1x - margem <= p1x <= self.p1x + margem
             and self.p1y - margem <= p1y <= self.p1y + margem
-            and self.opacidade - 0.15 <= opacidade <= self.opacidade + 0.15  # ±0.15 em torno do valor inicial
-            and self.velocidade_cme - 0.05 <= velocidade_cme <= self.velocidade_cme + 0.05  # ±0.05 AU/h em torno do valor inicial
+            and max(0.0, self.opacidade - 0.15) <= opacidade <= min(1.0, self.opacidade + 0.15)
+            and max(0.01, self.velocidade_cme - 0.05) <= velocidade_cme <= self.velocidade_cme + 0.05
             and self.taxa_esfriamento - 5 <= taxa_esfriamento <= self.taxa_esfriamento + 5  # ±5 em torno do valor inicial
         ):
             return 0.0
