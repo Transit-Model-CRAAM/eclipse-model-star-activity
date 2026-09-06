@@ -49,3 +49,11 @@ docs/_build/
 
 #aia files 
 Eclipse/Sun/aia*
+
+#personal-setup folder
+.personal-setup/
+
+#macOS
+.DS_Store
+
+

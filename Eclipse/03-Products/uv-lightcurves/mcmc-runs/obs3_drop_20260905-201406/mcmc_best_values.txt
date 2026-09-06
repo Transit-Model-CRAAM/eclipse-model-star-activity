@@ -1,0 +1,17 @@
+===================================
+     MELHORES VALORES (MCMC)     
+===================================
+raio_cme          : 80
+p0x               : 537
+p0y               : 543
+p1x               : 549
+p1y               : 87
+opacidade         : 0.870801515344654
+velocidade_cme    : 0.05092560677958644
+taxa_escurecimento: 58.19924493584
+===================================
+
+observacao        : 2011-05-01
+indice_da_obs_alvo : 2
+geometria          : drop
+run_id             : 20260905-201406
