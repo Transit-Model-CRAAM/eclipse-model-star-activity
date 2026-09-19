@@ -215,10 +215,12 @@ class Estrela:
         # Obter o caminho absoluto do diretório atual
         dir_atual = os.path.dirname(os.path.abspath(__file__))
 
-        # Voltar um diretório para chegar ao diretório pai
+        # Subir 3 níveis (Star/ -> 01-Core/ -> Eclipse/ -> raiz do repositório)
+        # para chegar até a pasta Sun/, que fica no mesmo nível de Eclipse/
         dir_pai = os.path.dirname(dir_atual)
         dir_pai = os.path.dirname(dir_pai)
-        
+        dir_pai = os.path.dirname(dir_pai)
+
         path = os.path.join(dir_pai, "Sun", "sdo_aia_download", path)
 
         for nome_arquivo in os.listdir(path):

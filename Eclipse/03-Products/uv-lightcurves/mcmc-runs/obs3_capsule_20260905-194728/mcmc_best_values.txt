@@ -1,0 +1,17 @@
+===================================
+     MELHORES VALORES (MCMC)     
+===================================
+raio_cme          : 172
+p0x               : 525
+p0y               : 158
+p1x               : 563
+p1y               : 283
+opacidade         : 0.5821182613377588
+velocidade_cme    : 0.05182894219298285
+taxa_escurecimento: 47.98509098329754
+===================================
+
+observacao        : 2011-05-01
+indice_da_obs_alvo : 2
+geometria          : capsule
+run_id             : 20260905-194728
