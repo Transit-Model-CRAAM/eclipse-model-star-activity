@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2020-2026 The ECLIPSE authors (CRAAM, Universidade Presbiteriana Mackenzie)
 TEXTS = {
     "PT": {
         "title": "Curva de luz extraída do Telescópio {mission} x Curva de luz modelo",
